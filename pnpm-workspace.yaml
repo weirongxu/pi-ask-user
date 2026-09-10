@@ -1,0 +1,5 @@
+allowBuilds:
+  '@google/genai': false
+  protobufjs: false
+minimumReleaseAgeExclude:
+  - '@rolldown/binding-openharmony-arm64@1.2.8'

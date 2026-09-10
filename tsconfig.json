@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    "declaration": false,
+    "allowJs": true,
+    "lib": ["DOM", "ES2022"],
+    "target": "ES2022",
+    "module": "nodenext",
+    "stripInternal": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs"]
+}
