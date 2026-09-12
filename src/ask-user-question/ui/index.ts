@@ -1,5 +1,8 @@
-import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
-import type { Theme } from '@earendil-works/pi-coding-agent'
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  Theme,
+} from '@earendil-works/pi-coding-agent'
 import type { Component } from '@earendil-works/pi-tui'
 import type { TUI } from '@earendil-works/pi-tui'
 
@@ -14,7 +17,7 @@ export type AskUserUiEventPayload = { id: string }
 
 export async function runQuestionnaire(args: {
   ctx: ExtensionContext
-  events: { emit: (key: string, payload: AskUserUiEventPayload) => void }
+  events: ExtensionAPI['events']
   id: string
   params: QuestionParamsSchema
 }): Promise<Result | null> {

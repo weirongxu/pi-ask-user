@@ -1,7 +1,9 @@
+import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 
+import { beginBusy, endBusy } from './busy.js'
+import { isTuiOwnerSession } from './owner.js'
 import type { QuestionParamsSchema } from './schema.js'
-import type { AskUserUiEventPayload } from './ui/index.js'
 import { runQuestionnaire } from './ui/index.js'
 
 export const DEMO_PARAMS: QuestionParamsSchema = {
@@ -311,9 +313,9 @@ Changes remain in the current branch for later consideration.
   ],
 }
 
-export async function runAskUserDemo(
+async function runAskUserDemo(
   ctx: ExtensionCommandContext,
-  events: { emit: (key: string, payload: AskUserUiEventPayload) => void },
+  events: ExtensionAPI['events'],
 ): Promise<void> {
   const result = await runQuestionnaire({
     ctx,
@@ -327,4 +329,22 @@ export async function runAskUserDemo(
   } else {
     ctx.ui.notify('用户取消了操作', 'warning')
   }
+}
+
+export function registerAskDemoCommand(pi: ExtensionAPI): void {
+  pi.registerCommand('ask-user-demo', {
+    description: 'Test ask_user_question tool UI component',
+    handler: async (_args, ctx) => {
+      if (!isTuiOwnerSession(ctx)) {
+        ctx.ui.notify('ask-user-demo requires a TUI session', 'warning')
+        return
+      }
+      await beginBusy()
+      try {
+        await runAskUserDemo(ctx, pi.events)
+      } finally {
+        endBusy()
+      }
+    },
+  })
 }

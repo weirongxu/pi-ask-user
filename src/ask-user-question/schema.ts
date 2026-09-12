@@ -29,7 +29,7 @@ export const QuestionParamsSchema = Type.Object({
 export type QuestionOptionSchema = Static<typeof QuestionOptionSchema>
 export type QuestionSchema = Static<typeof QuestionSchema>
 export type QuestionParamsSchema = Static<typeof QuestionParamsSchema>
-export type Selection = { index: number; note?: string }
+export type Selection = { index: number; label: string; note?: string }
 
 export interface Answer {
   customText: string | undefined
@@ -38,6 +38,8 @@ export interface Answer {
 
 export interface Draft {
   check: boolean
+  label: string
+  isOther: boolean
   note?: string
 }
 
@@ -98,26 +100,10 @@ export function buildAnswer(
   customText: string | undefined,
 ): Answer {
   const selected: Selection[] = []
-  for (let i = 0; i < draft.length; i++) {
-    const d = draft[i]
-    if (d?.check) selected.push({ index: i, note: d.note })
+  for (const [i, d] of draft.entries()) {
+    if (!d.check) continue
+    const label = d.isOther && customText !== undefined ? customText : d.label
+    selected.push({ index: i, label, note: d.note })
   }
   return { customText, selected }
-}
-
-export function deriveLabels(
-  answer: Answer,
-  options: QuestionOptionSchema[],
-): string[] {
-  const lastIndex = options.length - 1
-  const labels: string[] = []
-  for (const item of answer.selected) {
-    if (item.index === lastIndex && answer.customText !== undefined) {
-      labels.push(answer.customText)
-    } else {
-      const opt = options[item.index]
-      if (opt) labels.push(opt.label)
-    }
-  }
-  return labels
 }

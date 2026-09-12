@@ -62,8 +62,12 @@ function createEditorTheme(theme: Theme): EditorTheme {
   }
 }
 
-function createDraft(optionsCount: number): Draft[] {
-  return Array.from({ length: optionsCount }, () => ({ check: false }))
+function createDraft(options: QuestionSchema['options']): Draft[] {
+  return options.map((o) => ({
+    check: false,
+    label: o.label,
+    isOther: o.isOther === true,
+  }))
 }
 
 function buildSlots(
@@ -75,7 +79,7 @@ function buildSlots(
 ): QuestionSlot[] {
   return questions.map((question) => {
     const customEditor = new Editor(tui, editorTheme)
-    const draft = createDraft(question.options.length)
+    const draft = createDraft(question.options)
     const noteEditors = draft.map(() => new Editor(tui, editorTheme))
     customEditor.onSubmit = onSubmitCustom
     noteEditors.forEach((editor, i) => {
@@ -185,15 +189,15 @@ export function createQuestionnaireState(args: {
       if (!trimmed) return
       const slot = this.curQuestion
       const q = slot.question
-      const lastIndex = q.options.length - 1
+      const otherIndex = slot.draft.findIndex((d) => d.isOther)
       slot.customText = trimmed
       if (!q.multiSelect) {
         slot.draft.forEach((d, i) => {
-          d.check = i === lastIndex
+          d.check = i === otherIndex
         })
       } else {
-        const lastDraft = slot.draft[lastIndex]
-        if (lastDraft) lastDraft.check = true
+        const otherDraft = slot.draft[otherIndex]
+        if (otherDraft) otherDraft.check = true
       }
       this.advance()
     },
