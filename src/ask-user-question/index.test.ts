@@ -126,9 +126,30 @@ describe('registerAskUserQuestion', () => {
     )
 
     expect(runQuestionnaire).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: mainCtx,
+        id: 'call-1',
+        params,
+        subagent: true,
+      }),
+    )
+    expect(result.details).toEqual({
+      kind: 'ok',
+      results: answer.results,
+    })
+  })
+
+  it('does not mark asks from the owner session as subagent', async () => {
+    const { tool, fire } = registerExtension()
+    fire('session_start', mainCtx)
+
+    await tool.execute('call-1', params, undefined, undefined, mainCtx)
+
+    expect(runQuestionnaire).toHaveBeenCalledWith(
       expect.objectContaining({ ctx: mainCtx, id: 'call-1', params }),
     )
-    expect(result.details.kind).toBe('ok')
+    const call = vi.mocked(runQuestionnaire).mock.calls[0]?.[0]
+    expect(call?.subagent).toBe(false)
   })
 
   it('takes over the owner with last-wins when two TUI sessions start in sequence', async () => {

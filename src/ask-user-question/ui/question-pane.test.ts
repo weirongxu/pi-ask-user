@@ -62,7 +62,7 @@ const makePane = (): {
     done: () => {},
   })
   return {
-    pane: new QuestionPaneComponent({ state, params, theme }),
+    pane: new QuestionPaneComponent({ state, params, theme, subagent: false }),
     state,
   }
 }

@@ -21,14 +21,21 @@ export class QuestionnaireComponent implements Component {
     state,
     params,
     theme,
+    subagent,
   }: {
     state: QuestionnaireState
     params: QuestionParamsSchema
     theme: Theme
+    subagent: boolean
   }) {
     this.state = state
     this.theme = theme
-    this.questionPane = new QuestionPaneComponent({ state, params, theme })
+    this.questionPane = new QuestionPaneComponent({
+      state,
+      params,
+      theme,
+      subagent,
+    })
     this.previewPane = new QuestionnairePreviewPane(theme)
     this.inputHandler = new QuestionnaireInputHandler({
       state,

@@ -42,10 +42,10 @@ function toToolResult(result: Result | null): AgentToolResult<AskDetails> {
 
 async function withBusy(
   run: () => Promise<Result | null>,
-): Promise<AgentToolResult<AskDetails>> {
+): Promise<Result | null> {
   await beginBusy()
   try {
-    return toToolResult(await run())
+    return await run()
   } finally {
     endBusy()
   }
@@ -62,7 +62,13 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
       'A "Other:" row is always available for a free-form answer; just type to write and Enter to submit (Shift+Enter inserts a newline).',
     parameters: QuestionParamsSchema,
 
-    async execute(id, params): Promise<AgentToolResult<AskDetails>> {
+    async execute(
+      id,
+      params,
+      _signal,
+      _onUpdate,
+      ctx,
+    ): Promise<AgentToolResult<AskDetails>> {
       const parsed = parseParams(params)
       if (!parsed.ok) return errResult(`Error: ${parsed.error}`)
 
@@ -74,7 +80,13 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
           'Error: ask_user_question requires a TUI coordinator session',
         )
       }
-      return withBusy(() => current.ask(id, parsed.value))
+      // NOTE: asks from any session other than the owner (the TUI coordinator)
+      // come from a subagent and are labelled as such in the UI.
+      const isSubagent = current.sessionId !== ctx.sessionManager.getSessionId()
+      const result = await withBusy(() =>
+        current.ask(id, parsed.value, { subagent: isSubagent }),
+      )
+      return toToolResult(result)
     },
 
     renderCall(args: QuestionParamsSchema, theme) {

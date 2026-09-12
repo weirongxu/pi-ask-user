@@ -316,12 +316,14 @@ Changes remain in the current branch for later consideration.
 async function runAskUserDemo(
   ctx: ExtensionCommandContext,
   events: ExtensionAPI['events'],
+  subagent: boolean,
 ): Promise<void> {
   const result = await runQuestionnaire({
     ctx,
     events,
     id: 'ask-user-demo',
     params: DEMO_PARAMS,
+    subagent,
   })
 
   if (result) {
@@ -333,15 +335,20 @@ async function runAskUserDemo(
 
 export function registerAskDemoCommand(pi: ExtensionAPI): void {
   pi.registerCommand('ask-user-demo', {
-    description: 'Test ask_user_question tool UI component',
-    handler: async (_args, ctx) => {
+    description:
+      "Test ask_user_question tool UI component ('subagent' previews a subagent ask)",
+    handler: async (args, ctx) => {
       if (!isTuiOwnerSession(ctx)) {
         ctx.ui.notify('ask-user-demo requires a TUI session', 'warning')
         return
       }
       await beginBusy()
       try {
-        await runAskUserDemo(ctx, pi.events)
+        await runAskUserDemo(
+          ctx,
+          pi.events,
+          args.trim().toLowerCase() === 'subagent',
+        )
       } finally {
         endBusy()
       }

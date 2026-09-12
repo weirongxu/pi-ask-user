@@ -15,17 +15,23 @@ export const EVENT_KEY_UI_END = 'pi-ask-user:ask_user_question:ui_end'
 
 export type AskUserUiEventPayload = { id: string }
 
-export async function runQuestionnaire(args: {
+export async function runQuestionnaire({
+  ctx,
+  events,
+  id,
+  params,
+  subagent,
+}: {
   ctx: ExtensionContext
   events: ExtensionAPI['events']
   id: string
   params: QuestionParamsSchema
+  subagent: boolean
 }): Promise<Result | null> {
-  const { ctx, events, id, params } = args
   events.emit(EVENT_KEY_UI_START, { id })
   try {
     return await ctx.ui.custom<Result | null>((tui, theme, _kb, done) =>
-      renderQuestionnaire({ params, theme, tui, done }),
+      renderQuestionnaire({ params, theme, tui, done, subagent }),
     )
   } finally {
     events.emit(EVENT_KEY_UI_END, { id })
@@ -37,6 +43,7 @@ export function renderQuestionnaire(args: {
   theme: Theme
   tui: TUI
   done: (r: Result | null) => void
+  subagent: boolean
 }): Component {
   const state = createQuestionnaireState(args)
 
@@ -44,5 +51,6 @@ export function renderQuestionnaire(args: {
     state,
     params: args.params,
     theme: args.theme,
+    subagent: args.subagent,
   })
 }

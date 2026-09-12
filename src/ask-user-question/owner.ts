@@ -8,7 +8,11 @@ import { runQuestionnaire } from './ui/index.js'
 
 export type Owner = {
   sessionId: string
-  ask(id: string, params: QuestionParamsSchema): Promise<Result | null>
+  ask(
+    id: string,
+    params: QuestionParamsSchema,
+    opts: { subagent: boolean },
+  ): Promise<Result | null>
 }
 
 // NOTE: main and subagent sessions share one extension module instance, so this
@@ -37,7 +41,7 @@ export function setOwner(o: Owner | undefined): void {
 export function createOwner(pi: ExtensionAPI, ctx: ExtensionContext): Owner {
   return {
     sessionId: ctx.sessionManager.getSessionId(),
-    ask: async (id, params) => {
+    ask: async (id, params, opts) => {
       ctx.ui.setWorkingVisible(false)
       try {
         return await runQuestionnaire({
@@ -45,6 +49,7 @@ export function createOwner(pi: ExtensionAPI, ctx: ExtensionContext): Owner {
           events: pi.events,
           id,
           params,
+          subagent: opts.subagent,
         })
       } finally {
         ctx.ui.setWorkingVisible(true)

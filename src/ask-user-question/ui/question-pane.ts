@@ -56,18 +56,23 @@ export class QuestionPaneComponent {
   private readonly pane: Pane
   private readonly scrollView: ScrollView
 
+  private readonly subagent: boolean
+
   constructor({
     state,
     params,
     theme,
+    subagent,
   }: {
     state: QuestionnaireState
     params: QuestionParamsSchema
     theme: Theme
+    subagent: boolean
   }) {
     this.state = state
     this.params = params
     this.theme = theme
+    this.subagent = subagent
     this.scrollView = new ScrollView({ theme })
     this.pane = new Pane({
       theme,
@@ -98,10 +103,14 @@ export class QuestionPaneComponent {
   }
 
   private renderQuestion(width: number, lines: string[]): void {
+    const { theme, subagent } = this
+    const prefix = subagent
+      ? ` ${theme.fg('warning', 'subagent')} ${theme.fg('muted', '·')} `
+      : ' '
     lines.push(
       ...wrapPrefixed(
-        ' ',
-        this.theme.fg('text', this.state.curQuestion.question.question),
+        prefix,
+        theme.fg('text', this.state.curQuestion.question.question),
         width,
       ),
     )
