@@ -1,4 +1,8 @@
-import { type Terminal, TUI, visibleWidth } from '@earendil-works/pi-tui'
+import {
+  type Terminal,
+  TuiMainScreen,
+  visibleWidth,
+} from '@earendil-works/pi-tui'
 import { describe, expect, it } from 'vitest'
 
 import type { QuestionParamsSchema } from '../schema.js'
@@ -58,7 +62,7 @@ const makePane = (): {
   const state = createQuestionnaireState({
     params,
     theme,
-    tui: new TUI(stubTerminal()),
+    tui: new TuiMainScreen(stubTerminal()),
     done: () => {},
   })
   return {
