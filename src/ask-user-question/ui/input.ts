@@ -1,4 +1,4 @@
-import { Key, matchesKey } from '@earendil-works/pi-tui'
+import { type Editor, Key, matchesKey } from '@earendil-works/pi-tui'
 
 import type { QuestionParamsSchema } from '../schema.js'
 import type { QuestionnaireState } from '../state.js'
@@ -77,7 +77,7 @@ export class QuestionnaireInputHandler {
     return false
   }
 
-  // Branch order: cancel/clear -> submit (exit edit) -> fall through to editor
+  // Branch order: cancel/clear -> newline -> submit (exit edit) -> fall through to editor
   private handleNoteInput(data: string): boolean {
     const { state } = this
     const slot = state.curQuestion
@@ -97,6 +97,8 @@ export class QuestionnaireInputHandler {
       return true
     }
 
+    if (this.handleEditorNewLine(editor, data)) return true
+
     if (matchesKey(data, Key.enter)) {
       state.exitOptionNote()
       return true
@@ -107,7 +109,7 @@ export class QuestionnaireInputHandler {
     return true
   }
 
-  // Branch order: cursor move -> tab switch -> cancel/clear -> submit -> editor
+  // Branch order: cursor move -> tab switch -> cancel/clear -> newline -> submit -> editor
   private handleOtherOptionInput(data: string): boolean {
     const { state, params } = this
     const q = state.curQuestion.question
@@ -145,6 +147,8 @@ export class QuestionnaireInputHandler {
       }
       return true
     }
+
+    if (this.handleEditorNewLine(editor, data)) return true
 
     if (matchesKey(data, Key.enter)) {
       const text = editor.getText()
@@ -226,6 +230,16 @@ export class QuestionnaireInputHandler {
       return true
     }
 
+    return false
+  }
+
+  // NOTE: matchesKey treats a lone "\n" as plain enter when the kitty protocol is off, but the editor inserts a newline for it (legacy terminals send "\n" for shift+enter).
+  private handleEditorNewLine(editor: Editor, data: string): boolean {
+    if (matchesKey(data, 'shift+enter') || data === '\n') {
+      editor.handleInput(data)
+      this.state.requestRender()
+      return true
+    }
     return false
   }
 
