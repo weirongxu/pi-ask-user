@@ -1,6 +1,6 @@
 {
   "name": "@raidou/pi-ask-user",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Ask-user-question tool for pi: lets the agent present multiple-choice questions to the user.",
   "keywords": [
     "pi",
