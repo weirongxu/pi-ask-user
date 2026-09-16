@@ -1,6 +1,7 @@
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent'
 import { defineTool } from '@earendil-works/pi-coding-agent'
 import { Text } from '@earendil-works/pi-tui'
+import { Value } from 'typebox/value'
 
 import { beginBusy, endBusy } from './busy.js'
 import type { Owner } from './owner.js'
@@ -90,8 +91,11 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
     },
 
     renderCall(args: QuestionParamsSchema, theme) {
-      const count = args.questions.length
+      if (!Value.Check(QuestionParamsSchema, args)) {
+        return new Text(theme.fg('warning', '(invalid arguments)'), 0, 0)
+      }
       let text = theme.fg('toolTitle', theme.bold('ask_user_question '))
+      const count = args.questions.length
       text += theme.fg('muted', `${count} question${count === 1 ? '' : 's'}`)
       return new Text(text, 0, 0)
     },
@@ -124,6 +128,14 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
             return [mainLine, ...noteLines]
           })
           return new Text(lines.join('\n'), 0, 0)
+        }
+        default: {
+          const lines: string[] = []
+          for (const item of result.content) {
+            if (item.type === 'text') lines.push(item.text)
+          }
+          if (lines.length === 0) lines.push('(no content)')
+          return new Text(theme.fg('warning', lines.join('\n')), 0, 0)
         }
       }
     },

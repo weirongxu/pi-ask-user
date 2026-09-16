@@ -9,6 +9,7 @@ import { setOwner } from './owner.js'
 import type { QuestionParamsSchema, Result } from './schema.js'
 import type { createAskUserTool } from './tool.js'
 import { runQuestionnaire } from './ui/index.js'
+import { createStubTheme, stripAnsi } from './ui/test-theme.js'
 
 vi.mock('./ui/index.js', () => ({
   runQuestionnaire: vi.fn(async () => answer),
@@ -69,10 +70,16 @@ function registerExtension() {
   const registered = registerTool.mock.calls[0]?.[0]
   if (!registered) throw new Error('ask_user_question tool was not registered')
   const typed = registered as ReturnType<typeof createAskUserTool>
+  const { renderCall, renderResult } = typed
+  if (typeof renderCall !== 'function' || typeof renderResult !== 'function') {
+    throw new Error('render functions are not defined')
+  }
   return {
     tool: {
       execute: (...args: Parameters<typeof typed.execute>) =>
         typed.execute(...args),
+      renderCall,
+      renderResult,
     },
     fire: (
       event: 'session_start' | 'session_shutdown',
@@ -222,5 +229,93 @@ describe('registerAskUserQuestion', () => {
     if (result.details.kind === 'error') {
       expect(result.details.message).toContain('Error:')
     }
+  })
+
+  describe('renderResult', () => {
+    it('renders foreign results (e.g. pi validation failures) as warning text', () => {
+      const { tool } = registerExtension()
+      const foreign = {
+        content: [
+          {
+            type: 'text',
+            text: 'Validation failed for tool "ask_user_question": ...',
+          },
+        ],
+        details: {},
+      } as unknown as Parameters<typeof tool.renderResult>[0]
+      const ctx = {
+        args: {},
+        toolCallId: 'call-foreign',
+        invalidate: () => {},
+        lastComponent: undefined,
+      } as unknown as Parameters<typeof tool.renderResult>[3]
+
+      const component = tool.renderResult(
+        foreign,
+        { expanded: false, isPartial: false },
+        createStubTheme(),
+        ctx,
+      )
+
+      expect(component).toBeDefined()
+      const output = component.render(80).map(stripAnsi).join('\n')
+      expect(output).toContain('Validation failed for tool "ask_user_question"')
+    })
+
+    it('joins multiple foreign content blocks into the warning text', () => {
+      const { tool } = registerExtension()
+      const foreign = {
+        content: [
+          { type: 'text', text: 'first block' },
+          { type: 'text', text: 'second block' },
+        ],
+        details: {},
+      } as unknown as Parameters<typeof tool.renderResult>[0]
+      const ctx = {
+        args: {},
+        toolCallId: 'call-foreign-multi',
+        invalidate: () => {},
+        lastComponent: undefined,
+      } as unknown as Parameters<typeof tool.renderResult>[3]
+
+      const component = tool.renderResult(
+        foreign,
+        { expanded: false, isPartial: false },
+        createStubTheme(),
+        ctx,
+      )
+
+      expect(component).toBeDefined()
+      const output = component
+        .render(80)
+        .map((line) => stripAnsi(line).trimEnd())
+        .join('\n')
+      expect(output).toContain('first block\nsecond block')
+    })
+  })
+
+  describe('renderCall', () => {
+    it('does not throw on raw unvalidated arguments', () => {
+      const { tool } = registerExtension()
+      const theme = createStubTheme()
+
+      const garbage: unknown[] = [
+        {},
+        { questions: 'not-an-array' },
+        undefined,
+        { questions: [null] },
+      ]
+      const ctx = {
+        args: {},
+        toolCallId: 'call-garbage',
+        invalidate: () => {},
+        lastComponent: undefined,
+      } as unknown as Parameters<typeof tool.renderCall>[2]
+      for (const args of garbage) {
+        const component = tool.renderCall(args, theme, ctx)
+        expect(component).toBeDefined()
+        expect(() => component.render(80)).not.toThrow()
+      }
+    })
   })
 })
