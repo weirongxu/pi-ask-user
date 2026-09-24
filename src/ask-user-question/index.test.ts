@@ -102,7 +102,13 @@ describe('registerAskUserQuestion', () => {
     fire('session_start', rpcCtx)
     fire('session_start', mainCtx)
 
-    await tool.execute('call-1', params, undefined, undefined, mainCtx)
+    const first = await tool.execute(
+      'call-1',
+      params,
+      undefined,
+      undefined,
+      mainCtx,
+    )
 
     expect(runQuestionnaire).toHaveBeenCalledTimes(1)
     expect(vi.mocked(runQuestionnaire).mock.calls[0]?.[0]?.ctx).toBe(mainCtx)
@@ -113,6 +119,7 @@ describe('registerAskUserQuestion', () => {
       undefined,
       mainCtx,
     )
+    expect(first).toBeDefined()
     expect(second).toEqual({
       content: [{ type: 'text', text: JSON.stringify(answer) }],
       details: { kind: 'ok', results: answer.results },
@@ -150,13 +157,20 @@ describe('registerAskUserQuestion', () => {
     const { tool, fire } = registerExtension()
     fire('session_start', mainCtx)
 
-    await tool.execute('call-1', params, undefined, undefined, mainCtx)
+    const p = await tool.execute(
+      'call-1',
+      params,
+      undefined,
+      undefined,
+      mainCtx,
+    )
 
     expect(runQuestionnaire).toHaveBeenCalledWith(
       expect.objectContaining({ ctx: mainCtx, id: 'call-1', params }),
     )
     const call = vi.mocked(runQuestionnaire).mock.calls[0]?.[0]
     expect(call?.subagent).toBe(false)
+    expect(p.details).toEqual({ kind: 'ok', results: answer.results })
   })
 
   it('takes over the owner with last-wins when two TUI sessions start in sequence', async () => {
@@ -166,9 +180,10 @@ describe('registerAskUserQuestion', () => {
     fire('session_start', first)
     fire('session_start', second)
 
-    await tool.execute('call-1', params, undefined, undefined, second)
+    const p = await tool.execute('call-1', params, undefined, undefined, second)
 
     expect(vi.mocked(runQuestionnaire).mock.calls[0]?.[0]?.ctx).toBe(second)
+    expect(p.details).toEqual({ kind: 'ok', results: answer.results })
   })
 
   it('clears ownership on session_shutdown of the owner session only', async () => {
@@ -176,7 +191,14 @@ describe('registerAskUserQuestion', () => {
     fire('session_start', mainCtx)
     fire('session_shutdown', makeCtx('tui', true, 'other-session'))
 
-    await tool.execute('call-1', params, undefined, undefined, mainCtx)
+    const result1 = await tool.execute(
+      'call-1',
+      params,
+      undefined,
+      undefined,
+      mainCtx,
+    )
+    expect(result1.details).toEqual({ kind: 'ok', results: answer.results })
     expect(vi.mocked(runQuestionnaire).mock.calls[0]?.[0]?.ctx).toBe(mainCtx)
 
     fire('session_shutdown', mainCtx)
@@ -214,8 +236,7 @@ describe('registerAskUserQuestion', () => {
   })
 
   it('returns error details for invalid params', async () => {
-    const { tool, fire } = registerExtension()
-    fire('session_start', mainCtx)
+    const { tool } = registerExtension()
 
     const result = await tool.execute(
       'call-1',

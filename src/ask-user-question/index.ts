@@ -16,7 +16,6 @@ export function registerAskUserQuestion(
       setOwner(undefined)
     }
   })
-
   pi.registerTool(createAskUserTool(getOwner))
 
   if (options.demoEnabled) registerAskDemoCommand(pi)

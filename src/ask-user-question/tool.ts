@@ -3,7 +3,6 @@ import { defineTool } from '@earendil-works/pi-coding-agent'
 import { Text } from '@earendil-works/pi-tui'
 import { Value } from 'typebox/value'
 
-import { beginBusy, endBusy } from './busy.js'
 import type { Owner } from './owner.js'
 import {
   MAX_OPTIONS,
@@ -41,17 +40,6 @@ function toToolResult(result: Result | null): AgentToolResult<AskDetails> {
   }
 }
 
-async function withBusy(
-  run: () => Promise<Result | null>,
-): Promise<Result | null> {
-  await beginBusy()
-  try {
-    return await run()
-  } finally {
-    endBusy()
-  }
-}
-
 export function createAskUserTool(getOwner: () => Owner | undefined) {
   return defineTool<typeof QuestionParamsSchema, AskDetails>({
     name: 'ask_user_question',
@@ -74,8 +62,6 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
       if (!parsed.ok) return errResult(`Error: ${parsed.error}`)
 
       const current = getOwner()
-      // NOTE: only sessions that could not register as owner (non-TUI or
-      // headless) can hit this, i.e. when no TUI coordinator session exists.
       if (!current) {
         return errResult(
           'Error: ask_user_question requires a TUI coordinator session',
@@ -84,9 +70,9 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
       // NOTE: asks from any session other than the owner (the TUI coordinator)
       // come from a subagent and are labelled as such in the UI.
       const isSubagent = current.sessionId !== ctx.sessionManager.getSessionId()
-      const result = await withBusy(() =>
-        current.ask(id, parsed.value, { subagent: isSubagent }),
-      )
+      const result = await current.ask(id, parsed.value, {
+        subagent: isSubagent,
+      })
       return toToolResult(result)
     },
 

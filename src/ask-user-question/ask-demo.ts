@@ -1,7 +1,6 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 
-import { beginBusy, endBusy } from './busy.js'
 import { isTuiOwnerSession } from './owner.js'
 import type { QuestionParamsSchema } from './schema.js'
 import { runQuestionnaire } from './ui/index.js'
@@ -342,16 +341,11 @@ export function registerAskDemoCommand(pi: ExtensionAPI): void {
         ctx.ui.notify('ask-user-demo requires a TUI session', 'warning')
         return
       }
-      await beginBusy()
-      try {
-        await runAskUserDemo(
-          ctx,
-          pi.events,
-          args.trim().toLowerCase() === 'subagent',
-        )
-      } finally {
-        endBusy()
-      }
+      await runAskUserDemo(
+        ctx,
+        pi.events,
+        args.trim().toLowerCase() === 'subagent',
+      )
     },
   })
 }

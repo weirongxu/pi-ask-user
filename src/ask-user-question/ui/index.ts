@@ -28,13 +28,23 @@ export async function runQuestionnaire({
   params: QuestionParamsSchema
   subagent: boolean
 }): Promise<Result | null> {
-  events.emit(EVENT_KEY_UI_START, { id })
   try {
-    return await ctx.ui.custom<Result | null>((tui, theme, _kb, done) =>
-      renderQuestionnaire({ params, theme, tui, done, subagent }),
+    events.emit(EVENT_KEY_UI_START, { id })
+  } catch {
+    // Swallow: failing to announce UI start must not break the question flow.
+  }
+  try {
+    return await ctx.ui.custom<Result | null>(
+      (tui, theme, _kb, done) =>
+        renderQuestionnaire({ params, theme, tui, done, subagent }),
+      { overlay: true },
     )
   } finally {
-    events.emit(EVENT_KEY_UI_END, { id })
+    try {
+      events.emit(EVENT_KEY_UI_END, { id })
+    } catch {
+      // Swallow: an END-emit throw must not mask the questionnaire result.
+    }
   }
 }
 
