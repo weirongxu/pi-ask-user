@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Tabs, type TabStripItem } from './tabs.js'
+import { type TabStripItem, Tabs } from './tabs.js'
 import { createStubTheme } from './test-theme.js'
 
 const stripAnsi = (text: string): string =>

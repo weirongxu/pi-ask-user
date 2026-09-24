@@ -2,7 +2,7 @@ import { type Terminal, TuiMainScreen } from '@earendil-works/pi-tui'
 import { describe, expect, it } from 'vitest'
 
 import type { QuestionParamsSchema } from '../schema.js'
-import { createQuestionnaireState, type QuestionnaireState } from '../state.js'
+import { type QuestionnaireState, createQuestionnaireState } from '../state.js'
 import { QuestionnaireInputHandler } from './input.js'
 import { QuestionnairePreviewPane } from './preview-pane.js'
 import { createStubTheme } from './test-theme.js'

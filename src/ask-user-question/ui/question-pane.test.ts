@@ -6,7 +6,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 import type { QuestionParamsSchema } from '../schema.js'
-import { createQuestionnaireState, type QuestionnaireState } from '../state.js'
+import { type QuestionnaireState, createQuestionnaireState } from '../state.js'
 import { QuestionPaneComponent } from './question-pane.js'
 import { createStubTheme, stripAnsi } from './test-theme.js'
 

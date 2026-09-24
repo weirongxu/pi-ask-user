@@ -9,10 +9,10 @@ import {
   MAX_QUESTIONS,
   MIN_OPTIONS,
   MIN_QUESTIONS,
-  parseParams,
   QuestionParamsSchema,
   type QuestionResult,
   type Result,
+  parseParams,
 } from './schema.js'
 
 export type AskDetails =

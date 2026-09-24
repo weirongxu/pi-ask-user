@@ -4,3 +4,4 @@ allowBuilds:
   protobufjs: false
 minimumReleaseAgeExclude:
   - '@rolldown/binding-openharmony-arm64@1.2.8'
+  - '@raidou/oxlint-config-base@0.0.3'
