@@ -13,7 +13,7 @@ const params: QuestionParamsSchema = {
   questions: [
     {
       question: 'Pick one',
-      tabName: 'Tab',
+      header: 'Tab',
       options: [{ label: 'a' }, { label: 'b' }],
     },
   ],

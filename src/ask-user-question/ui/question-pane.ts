@@ -93,7 +93,7 @@ export class QuestionPaneComponent {
     const { state, params, theme } = this
     return new Tabs({
       items: params.questions.map((q, i) => ({
-        name: q.tabName,
+        name: q.header,
         answered: state.answeredIndices.has(i),
       })),
       currentIndex: state.cursor.questionIndex,

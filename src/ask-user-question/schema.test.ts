@@ -8,7 +8,7 @@ describe('parseParams', () => {
       questions: [
         {
           question: 'q',
-          tabName: 't',
+          header: 't',
           options: [{ label: 'line1\nline2' }, { label: 'a\r\nb\rc  ' }],
         },
       ],

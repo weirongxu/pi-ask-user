@@ -40,14 +40,14 @@ const makeParams = (): QuestionParamsSchema => ({
   questions: [
     {
       question: 'Pick one',
-      tabName: 'Tab A',
+      header: 'Tab A',
       options: Array.from({ length: 5 }, (_, i) => ({
         label: `Option ${i + 1}`,
       })),
     },
     {
       question: 'Pick another',
-      tabName: 'Tab B',
+      header: 'Tab B',
       options: [{ label: 'A' }, { label: 'B' }],
     },
   ],

@@ -40,7 +40,7 @@ const makeHandler = (): {
     questions: [
       {
         question: 'Pick one',
-        tabName: 'Tab A',
+        header: 'Tab A',
         options: [{ label: 'A' }, { label: 'B' }],
       },
     ],

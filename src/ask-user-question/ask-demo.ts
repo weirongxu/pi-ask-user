@@ -9,7 +9,7 @@ export const DEMO_PARAMS: QuestionParamsSchema = {
   questions: [
     {
       question: 'What feature do you want to test next?',
-      tabName: 'Feature',
+      header: 'Feature',
       multiSelect: false,
       options: [
         {
@@ -95,7 +95,7 @@ curl -H "Accept: text/html" https://example.com
     },
     {
       question: 'Which localization features do you need?',
-      tabName: 'internationalization-and-localization-config',
+      header: 'internationalization-and-localization-config',
       multiSelect: true,
       options: [
         {
@@ -147,7 +147,7 @@ Right-to-left rendering for Arabic/Hebrew locales.
     },
     {
       question: 'How should we handle timezone-aware formatting?',
-      tabName: 'datetime-formatting-and-timezone-rendering-pipeline',
+      header: 'datetime-formatting-and-timezone-rendering-pipeline',
       multiSelect: false,
       options: [
         {
@@ -173,7 +173,7 @@ Use the platform: \`Intl.DateTimeFormat\` with \`timeZone\`.
     },
     {
       question: 'Which keyboard shortcuts need documentation?',
-      tabName: 'keyboard-shortcuts-reference-and-migration-notes-for-v2',
+      header: 'keyboard-shortcuts-reference-and-migration-notes-for-v2',
       multiSelect: true,
       options: [
         { label: 'Navigation keys' },
@@ -203,7 +203,7 @@ Use the platform: \`Intl.DateTimeFormat\` with \`timeZone\`.
     },
     {
       question: 'Which interaction modes do you want to test?',
-      tabName: 'Mode',
+      header: 'Mode',
       multiSelect: true,
       options: [
         { label: 'Single select' },
@@ -214,7 +214,7 @@ Use the platform: \`Intl.DateTimeFormat\` with \`timeZone\`.
     },
     {
       question: 'What is the test environment?',
-      tabName: 'Env',
+      header: 'Env',
       multiSelect: true,
       options: [
         { label: 'Local dev' },
@@ -225,7 +225,7 @@ Use the platform: \`Intl.DateTimeFormat\` with \`timeZone\`.
     },
     {
       question: 'Should we merge immediately?',
-      tabName: 'Merge',
+      header: 'Merge',
       multiSelect: false,
       options: [
         {

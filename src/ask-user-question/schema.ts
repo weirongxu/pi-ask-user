@@ -17,8 +17,9 @@ export const QuestionOptionSchema = Type.Object({
 
 export const QuestionSchema = Type.Object({
   question: Type.String(),
-  // FIXME: 改成 header 是不是好点？深度调查一下是不是其他 agent 都是用 header 的
-  tabName: Type.String(),
+  header: Type.String({
+    description: 'Short tab header, a few words (e.g. "Build", "Tests")',
+  }),
   options: Type.Array(QuestionOptionSchema),
   multiSelect: Type.Optional(Type.Boolean()),
 })

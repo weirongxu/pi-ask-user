@@ -19,7 +19,7 @@ type CtxMode = ExtensionContext['mode']
 
 const question = {
   question: 'Pick one',
-  tabName: 'Tab',
+  header: 'Tab',
   options: [{ label: 'a' }, { label: 'b' }],
 }
 
