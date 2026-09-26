@@ -117,11 +117,23 @@ export class QuestionnaireInputHandler {
     const isOtherNextTab = matchesKey(data, Key.tab)
     const isOtherPrevTab = matchesKey(data, 'shift+tab')
 
-    if (matchesKey(data, Key.up) && editor.getCursor().line === 0) {
-      state.cursor.optionIndex =
-        (state.cursor.optionIndex - 1 + q.options.length) % q.options.length
-      this.resetPreviewScroll()
-      state.requestRender()
+    // Editor consumes Up/Down internally unless the cursor is at the outermost
+    // line, in which case move focus to the adjacent option.
+    if (
+      matchesKey(data, Key.up) &&
+      q.options.length > 1 &&
+      editor.getCursor().line === 0
+    ) {
+      this.moveOption(-1)
+      return true
+    }
+
+    if (
+      matchesKey(data, Key.down) &&
+      q.options.length > 1 &&
+      editor.getCursor().line === editor.getLines().length - 1
+    ) {
+      this.moveOption(1)
       return true
     }
 
@@ -173,17 +185,12 @@ export class QuestionnaireInputHandler {
     const optionCount = q.options.length
 
     if (this.matches(data, 'option.prev') && optionCount > 1) {
-      state.cursor.optionIndex =
-        (state.cursor.optionIndex - 1 + optionCount) % optionCount
-      this.resetPreviewScroll()
-      state.requestRender()
+      this.moveOption(-1)
       return true
     }
 
     if (this.matches(data, 'option.next') && optionCount > 1) {
-      state.cursor.optionIndex = (state.cursor.optionIndex + 1) % optionCount
-      this.resetPreviewScroll()
-      state.requestRender()
+      this.moveOption(1)
       return true
     }
 
@@ -248,5 +255,15 @@ export class QuestionnaireInputHandler {
   // render and ScrollView.nextOffset() clamps via ensureVisible.
   private resetPreviewScroll(): void {
     this.previewPane.resetScroll()
+  }
+
+  // Move option focus by -1/+1 with wrap-around, then refresh UI.
+  private moveOption(delta: 1 | -1): void {
+    const { state } = this
+    const count = state.curQuestion.question.options.length
+    state.cursor.optionIndex =
+      (state.cursor.optionIndex + delta + count) % count
+    this.resetPreviewScroll()
+    state.requestRender()
   }
 }

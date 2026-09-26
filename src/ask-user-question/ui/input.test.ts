@@ -104,6 +104,84 @@ describe('QuestionnaireInputHandler', () => {
     expect(slot.customText).toBe('a\nb')
   })
 
+  it('moves to the next option on Down at the last line of the Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+    const editor = state.curQuestion.customEditor
+
+    editor.setText('a\nb')
+    // Move the editor cursor down to the last logical line before dispatching.
+    editor.handleInput('\x1b[B')
+    handler.handleInput('\x1b[B')
+
+    // Other is the last option, so focus wraps to the first option.
+    expect(state.cursor.optionIndex).toBe(0)
+  })
+
+  it('keeps the editor cursor on Down when not at the last line of the Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+    const editor = state.curQuestion.customEditor
+
+    editor.setText('a\nb')
+    // setText parks the cursor at the end; bring it back to the first line.
+    editor.handleInput('\x1b[A')
+    // Cursor is still on the first line; Down must stay inside the editor.
+    handler.handleInput('\x1b[B')
+
+    expect(state.cursor.optionIndex).toBe(
+      state.curQuestion.question.options.length - 1,
+    )
+    expect(editor.getCursor().line).toBe(1)
+  })
+
+  it('moves to the previous option on Up at the first line of the Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+
+    handler.handleInput('\x1b[A')
+
+    expect(state.cursor.optionIndex).toBe(
+      state.curQuestion.question.options.length - 2,
+    )
+  })
+
+  it('moves to the next option on Down in a single-line Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+
+    handler.handleInput('\x1b[B')
+
+    // Other is the last option, so focus wraps to the first option.
+    expect(state.cursor.optionIndex).toBe(0)
+  })
+
+  it('moves to the previous option on Up in an empty Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+
+    handler.handleInput('\x1b[A')
+
+    expect(state.cursor.optionIndex).toBe(
+      state.curQuestion.question.options.length - 2,
+    )
+  })
+
+  it('keeps the editor cursor on Up when not at the first line of the Other editor', () => {
+    const { handler, state } = makeHandler()
+    focusOther(state)
+    const editor = state.curQuestion.customEditor
+
+    editor.setText('a\nb')
+    editor.handleInput('\x1b[B')
+    handler.handleInput('\x1b[A')
+
+    expect(state.cursor.optionIndex).toBe(
+      state.curQuestion.question.options.length - 1,
+    )
+    expect(editor.getCursor().line).toBe(0)
+  })
+
   it('inserts a newline in the note editor and keeps editing', () => {
     const { handler, state } = makeHandler()
     state.enterOptionNote(0)
