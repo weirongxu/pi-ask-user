@@ -1,3 +1,4 @@
+import { visibleWidth } from '@earendil-works/pi-tui'
 import { describe, expect, it } from 'vitest'
 
 import { type TabStripItem, Tabs } from './tabs.js'
@@ -30,7 +31,10 @@ const renderPlain = (
   items: readonly TabStripItem[],
   currentIndex: number,
   width: number,
-): string => stripAnsi(render(items, currentIndex, width)[0] ?? '')
+): string =>
+  stripAnsi(render(items, currentIndex, width)[0] ?? '')
+    .replace(/ +(?=[←→])/g, '')
+    .trimEnd()
 
 describe('Tabs', () => {
   const SELECTED_BG = '48;2;' // truecolor background of the dark theme's selectedBg
@@ -47,21 +51,27 @@ describe('Tabs', () => {
     const close = line.indexOf(`${ESC}[49m`, open)
     expect(close).toBeGreaterThan(0)
     expect(stripAnsi(line.slice(open, close))).toBe('[□ A] [1/3]')
-    expect(stripAnsi(line)).toBe('[□ A] [1/3] [□ B] [□ C]→')
+    expect(renderPlain([item('A'), item('B'), item('C')], 0, 80)).toBe(
+      '[□ A] [1/3] [□ B] [□ C]→',
+    )
     // Only one styled span on the line.
     expect(line.split(`${ESC}[${SELECTED_BG}`).length - 1).toBe(1)
   })
 
   it('highlights only the current tab when left neighbors precede it', () => {
     const line = render([item('A'), item('B'), item('C')], 1, 80)[0] ?? ''
-    expect(stripAnsi(line)).toBe('←[□ A] [□ B] [2/3] [□ C]→')
+    expect(renderPlain([item('A'), item('B'), item('C')], 1, 80)).toBe(
+      '←[□ A] [□ B] [2/3] [□ C]→',
+    )
     // The bg span wraps exactly '[□ B] [2/3]', after the plain left neighbor.
     const open = line.indexOf(`${ESC}[${SELECTED_BG}`)
     const close = line.indexOf(`${ESC}[49m`, open)
     expect(open).toBeGreaterThan(0)
     expect(stripAnsi(line.slice(0, open))).toBe('←[□ A] ')
     expect(stripAnsi(line.slice(open, close))).toBe('[□ B] [2/3]')
-    expect(stripAnsi(line.slice(close))).toBe(' [□ C]→')
+    expect(
+      renderPlain([item('A'), item('B'), item('C')], 1, 80).slice(-7),
+    ).toBe(' [□ C]→')
     expect(line.split(`${ESC}[${SELECTED_BG}`).length - 1).toBe(1)
   })
 
@@ -93,10 +103,10 @@ describe('Tabs', () => {
     const close = line.indexOf(`${ESC}[49m`, open)
     expect(open).toBeGreaterThan(0)
     expect(close).toBeGreaterThan(open)
-    expect(plain).toBe('←AAA] [□ B] [2/3] [□ C]→')
+    expect(plain.trimEnd()).toBe('←AAA] [□ B] [2/3] [□ C]→')
     expect(stripAnsi(line.slice(open, close))).toBe('[□ B] [2/3]')
     expect(stripAnsi(line.slice(0, open))).toBe('←AAA] ')
-    expect(stripAnsi(line.slice(close))).toBe(' [□ C]→')
+    expect(stripAnsi(line.slice(close)).trimEnd()).toBe(' [□ C]→')
     expect(line.split(`${ESC}[${SELECTED_BG}`).length - 1).toBe(1)
   })
 
@@ -116,6 +126,27 @@ describe('Tabs', () => {
   it('does not crash at very narrow widths', () => {
     expect(() => render([item('A'), item('B'), item('C')], 1, 1)).not.toThrow()
     expect(() => render([item('A'), item('B'), item('C')], 1, 0)).not.toThrow()
+  })
+
+  it('renders nothing when the width cannot fit the arrows', () => {
+    expect(render([item('A'), item('B'), item('C')], 1, 1)).toEqual([])
+    expect(render([item('A'), item('B'), item('C')], 1, 0)).toEqual([])
+    expect(renderPlain([item('A'), item('B'), item('C')], 1, 2)).toBe('←→')
+  })
+
+  it('never exceeds the given width across narrow widths', () => {
+    const items = [item('中文标签甲'), item('当前标签页'), item('其他')]
+    for (let width = 0; width <= 40; width++) {
+      const rendered = render(items, 1, width)
+      // A line is only rendered when it fits; widths 0/1 return nothing.
+      if (width <= 1) {
+        expect(rendered).toEqual([])
+        continue
+      }
+      for (const line of rendered) {
+        expect(visibleWidth(stripAnsi(line))).toBe(width)
+      }
+    }
   })
 
   it('renders all neighbors with arrows on both sides when everything fits', () => {
@@ -170,7 +201,7 @@ describe('Tabs', () => {
       // Arrows never sit inside the styled span: walk the line segment by
       // segment, tracking whether a bg span is open, and require every '→'
       // to appear in a plain (unstyled) segment.
-      expect(line.endsWith('→') || line.startsWith('←')).toBe(true)
+      expect(line.trimEnd().endsWith('→') || line.startsWith('←')).toBe(true)
       let inStyled = false
       for (const part of line.split(new RegExp(`(${ESC}\\[[0-9;]*m)`))) {
         if (part.startsWith(ESC)) {
@@ -263,15 +294,34 @@ describe('Tabs', () => {
     const stripped = line.replace(ANSI_ESCAPE, '')
     expect(stripped).not.toContain(ESC)
     // truncateText({ direction: 'start' }) drops whole characters from the
-    // head and keeps the tail intact, so the closing `]` of the cut label is
-    // preserved rather than replaced by a space (it never splits a wide char,
-    // which may overflow the target width by up to one narrow char).
-    expect(stripAnsi(line)).toBe('←乙] [□ 当前标签页] [3/3]')
+    // head and keeps the tail intact, never exceeding the target width (it
+    // may drop one extra char rather than overshoot).
+    expect(stripAnsi(line).trimEnd()).toBe('←] [□ 当前标签页] [3/3]')
     const open = line.indexOf(`${ESC}[${SELECTED_BG}`)
     const close = line.indexOf(`${ESC}[49m`, open)
     expect(open).toBeGreaterThan(0)
     expect(stripAnsi(line.slice(open, close))).toBe('[□ 当前标签页] [3/3]')
     expect(line.split(`${ESC}[${SELECTED_BG}`).length - 1).toBe(1)
+  })
+
+  it('pads the strip with unstyled trailing spaces to the full width', () => {
+    // The current tab is last here, so its closing [49m sits right before
+    // the padding: the filler must be plain spaces outside any bg span.
+    const line = render([item('A'), item('B'), item('C')], 2, 40)[0] ?? ''
+    const plain = stripAnsi(line)
+    expect(plain.endsWith(' '.repeat(40 - plain.trimEnd().length))).toBe(true)
+    const close = line.indexOf(`${ESC}[49m`) + `${ESC}[49m`.length
+    expect(line.slice(close)).toMatch(/^ +$/)
+  })
+
+  it('pins arrows to the row edges with padding in between', () => {
+    const width = 60
+    const line = stripAnsi(
+      render([item('A'), item('B'), item('C')], 1, width)[0] ?? '',
+    )
+    expect(line[0]).toBe('←')
+    expect(line[width - 1]).toBe('→')
+    expect(line[width - 2]).toBe(' ')
   })
 
   it('marks answered tabs with ■ and unanswered with □', () => {

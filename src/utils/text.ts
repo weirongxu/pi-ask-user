@@ -54,13 +54,18 @@ export function truncateText(
       const cutTarget = total - targetWidth
       let cut = 0
       let dropped = 0
-      for (const { width } of entries) {
-        if (cut + width <= cutTarget) {
-          cut += width
-          dropped++
-        } else {
+      for (const [i, { width }] of entries.entries()) {
+        if (cut + width > cutTarget) {
+          // Whole-char granularity may overshoot the target by <1 char; drop
+          // this char too so the kept tail never exceeds the target width.
+          if (cut < cutTarget) {
+            cut += width
+            dropped = i + 1
+          }
           break
         }
+        cut += width
+        dropped = i + 1
       }
       kept =
         ellipsis +

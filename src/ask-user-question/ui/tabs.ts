@@ -40,9 +40,9 @@ export class Tabs {
     this.tabLine = ''
     const hasLeft = currentIndex !== 0
     const hasRight = currentIndex < total - 1
-    this.remain = this.tabWidth
-    if (hasLeft) this.remain -= 1
-    if (hasRight) this.remain -= 1
+    const arrowWidth = (hasLeft ? 1 : 0) + (hasRight ? 1 : 0)
+    this.remain = this.tabWidth - arrowWidth
+    if (this.remain < 0) return []
 
     this.add('right', this.currentPart(), (s) => this.theme.bg('selectedBg', s))
 
@@ -58,8 +58,10 @@ export class Tabs {
       }
     }
 
-    if (currentIndex !== 0) this.tabLine = LEFT_ARROW + this.tabLine
-    if (currentIndex < total - 1) this.tabLine += RIGHT_ARROW
+    const padWidth = this.tabWidth - arrowWidth - visibleWidth(this.tabLine)
+    this.tabLine += ' '.repeat(padWidth)
+    if (hasLeft) this.tabLine = LEFT_ARROW + this.tabLine
+    if (hasRight) this.tabLine += RIGHT_ARROW
 
     return [this.tabLine]
   }
