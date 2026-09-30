@@ -1,7 +1,7 @@
 import { type Static, Type } from 'typebox'
 import { Value } from 'typebox/value'
 
-import { flattenToSingleLine } from '../utils/text.js'
+import { flattenToSingleLine, normalizeNewlines } from '../utils/text.js'
 
 export const MIN_QUESTIONS = 1
 export const MAX_QUESTIONS = 10
@@ -78,20 +78,24 @@ export function parseParams(
       }
     }
   }
-  return { ok: true, value: normalizeOptionLabels(input) }
+  return { ok: true, value: normalizeParams(input) }
 }
 
-// Normalize option labels so downstream list rendering never receives raw
-// newlines; long labels wrap via wrapPrefixed instead of breaking the layout.
-function normalizeOptionLabels(
-  params: QuestionParamsSchema,
-): QuestionParamsSchema {
+function normalizeParams(params: QuestionParamsSchema): QuestionParamsSchema {
   return {
     questions: params.questions.map((q) => ({
       ...q,
+      question: flattenToSingleLine(q.question),
+      header: flattenToSingleLine(q.header),
       options: q.options.map((opt) => ({
         ...opt,
         label: flattenToSingleLine(opt.label),
+        ...(opt.description !== undefined
+          ? { description: flattenToSingleLine(opt.description) }
+          : {}),
+        ...(opt.preview !== undefined
+          ? { preview: normalizeNewlines(opt.preview) }
+          : {}),
       })),
     })),
   }

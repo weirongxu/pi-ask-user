@@ -6,6 +6,10 @@ export function flattenToSingleLine(text: string): string {
   return flatten(text).trim()
 }
 
+export function normalizeNewlines(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, ' ')
+}
+
 type TruncateOptions = {
   ellipsis?: string
   pad?: boolean

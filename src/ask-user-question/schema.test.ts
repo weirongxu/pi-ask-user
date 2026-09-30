@@ -20,13 +20,41 @@ describe('parseParams', () => {
     expect(b?.label).toBe('a b c')
   })
 
+  it('collapses stray carriage returns into spaces across text fields', () => {
+    const result = parseParams({
+      questions: [
+        {
+          question: '实现\r？',
+          header: '方案\r确认',
+          options: [
+            {
+              label: '按这个做\r',
+              description: '两份\r README',
+              preview: 'a\r\nb\rc 两份\rREADME',
+            },
+            { label: 'other' },
+          ],
+        },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const q = result.value.questions[0]
+    expect(q?.question).toBe('实现 ？')
+    expect(q?.header).toBe('方案 确认')
+    const [a] = q?.options ?? []
+    expect(a?.label).toBe('按这个做')
+    expect(a?.description).toBe('两份 README')
+    expect(a?.preview).toBe('a\nb c 两份 README')
+  })
+
   it('rejects invalid params', () => {
     expect(parseParams({ questions: 'nope' }).ok).toBe(false)
   })
 })
 
 describe('buildAnswer', () => {
-  it('uses customText as label when the last option is selected', () => {
+  it('uses customText as label when the Other option is selected', () => {
     const answer = buildAnswer(
       [
         { check: false, label: 'a', isOther: false },
