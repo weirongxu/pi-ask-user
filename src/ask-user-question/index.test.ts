@@ -35,6 +35,10 @@ const answer: Result = {
   cancelled: false,
 }
 
+type ToolContext = Parameters<
+  ReturnType<typeof createAskUserTool>['execute']
+>[4]
+
 function makeCtx(
   mode: CtxMode,
   hasUI: boolean,
@@ -48,8 +52,14 @@ function makeCtx(
   } as unknown as ExtensionContext
 }
 
+function withTools(ctx: ExtensionContext): ToolContext {
+  return { ...ctx, tools: [], executeTool: vi.fn() }
+}
+
 const rpcCtx = makeCtx('rpc', true, 'rpc-session')
 const mainCtx = makeCtx('tui', true, 'main-session')
+const rpcToolCtx = withTools(rpcCtx)
+const mainToolCtx = withTools(mainCtx)
 
 type Handler = (event: unknown, ctx: ExtensionContext) => void
 
@@ -107,7 +117,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
 
     expect(runQuestionnaire).toHaveBeenCalledTimes(1)
@@ -117,7 +127,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
     expect(first).toBeDefined()
     expect(second).toEqual({
@@ -136,7 +146,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      rpcCtx,
+      rpcToolCtx,
     )
 
     expect(runQuestionnaire).toHaveBeenCalledWith(
@@ -162,7 +172,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
 
     expect(runQuestionnaire).toHaveBeenCalledWith(
@@ -180,7 +190,13 @@ describe('registerAskUserQuestion', () => {
     fire('session_start', first)
     fire('session_start', second)
 
-    const p = await tool.execute('call-1', params, undefined, undefined, second)
+    const p = await tool.execute(
+      'call-1',
+      params,
+      undefined,
+      undefined,
+      withTools(second),
+    )
 
     expect(vi.mocked(runQuestionnaire).mock.calls[0]?.[0]?.ctx).toBe(second)
     expect(p.details).toEqual({ kind: 'ok', results: answer.results })
@@ -196,7 +212,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
     expect(result1.details).toEqual({ kind: 'ok', results: answer.results })
     expect(vi.mocked(runQuestionnaire).mock.calls[0]?.[0]?.ctx).toBe(mainCtx)
@@ -207,7 +223,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      rpcCtx,
+      rpcToolCtx,
     )
     expect(runQuestionnaire).toHaveBeenCalledTimes(1)
     expect(result.details).toEqual({
@@ -229,7 +245,7 @@ describe('registerAskUserQuestion', () => {
       params,
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
 
     expect(result.details).toEqual({ kind: 'cancelled' })
@@ -243,7 +259,7 @@ describe('registerAskUserQuestion', () => {
       { questions: [] },
       undefined,
       undefined,
-      mainCtx,
+      mainToolCtx,
     )
 
     expect(result.details.kind).toBe('error')
