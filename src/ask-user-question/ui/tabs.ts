@@ -8,7 +8,11 @@ type Side = 'left' | 'right'
 const LEFT_ARROW = '←'
 const RIGHT_ARROW = '→'
 
-export type TabStripItem = { name: string; answered: boolean }
+export type TabStripItem = {
+  name: string
+  answered: boolean
+  multiSelect: boolean
+}
 
 type TabsOptions = {
   items: readonly TabStripItem[]
@@ -90,8 +94,18 @@ export class Tabs {
     return fits
   }
 
-  private tabLabel = (i: number): string =>
-    `[${(this.items[i]?.answered ?? false) ? '■' : '□'} ${this.items[i]?.name ?? ''}]`
+  private tabLabel = (i: number): string => {
+    const item = this.items[i]
+    const answered = item?.answered ?? false
+    const glyph = item?.multiSelect
+      ? answered
+        ? '■'
+        : '□'
+      : answered
+        ? '●'
+        : '○'
+    return `[${glyph} ${item?.name ?? ''}]`
+  }
 
   private currentPart = (): string =>
     `${this.tabLabel(this.currentIndex)} [${this.currentIndex + 1}/${this.items.length}]`

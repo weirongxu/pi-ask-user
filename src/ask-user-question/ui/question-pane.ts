@@ -95,6 +95,7 @@ export class QuestionPaneComponent {
       items: params.questions.map((q, i) => ({
         name: q.header,
         answered: state.answeredIndices.has(i),
+        multiSelect: q.multiSelect === true,
       })),
       currentIndex: state.cursor.questionIndex,
       width,

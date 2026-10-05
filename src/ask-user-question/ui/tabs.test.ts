@@ -10,9 +10,14 @@ const stripAnsi = (text: string): string =>
 const ESC = String.fromCharCode(27)
 const ANSI_ESCAPE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g')
 
-const item = (name: string, answered = false): TabStripItem => ({
+const item = (
+  name: string,
+  answered = false,
+  multiSelect = true,
+): TabStripItem => ({
   name,
   answered,
+  multiSelect,
 })
 
 const render = (
@@ -328,5 +333,20 @@ describe('Tabs', () => {
     expect(
       renderPlain([item('A', true), item('B'), item('C', true)], 1, 80),
     ).toBe('←[■ A] [□ B] [2/3] [■ C]→')
+  })
+
+  it('uses radio glyphs for single-select tabs and checkbox glyphs for multi-select tabs', () => {
+    expect(
+      renderPlain(
+        [
+          item('Single', false, false),
+          item('Multi', false, true),
+          item('SingleDone', true, false),
+          item('MultiDone', true, true),
+        ],
+        0,
+        80,
+      ),
+    ).toBe('[○ Single] [1/4] [□ Multi] [● SingleDone] [■ MultiDone]→')
   })
 })
