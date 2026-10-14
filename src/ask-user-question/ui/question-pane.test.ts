@@ -1,8 +1,13 @@
 import {
-  type Terminal,
+  CURSOR_MARKER,
   TuiMainScreen,
+  type Terminal,
   visibleWidth,
 } from '@earendil-works/pi-tui'
+import {
+  FAKE_CURSOR_END,
+  FAKE_CURSOR_START,
+} from '@earendil-works/pi-tui/dist/tui.js'
 import { describe, expect, it } from 'vitest'
 
 import type { QuestionParamsSchema } from '../schema.js'
@@ -32,6 +37,7 @@ const stubTerminal = (): Terminal => ({
   clearScreen: () => {},
   setTitle: () => {},
   setProgress: () => {},
+  setProgramStatus: () => {},
 })
 
 // Two questions -> pinned title is the 2-line tab block + rule; state
@@ -78,6 +84,15 @@ const TITLE_LINES = 1
 const RULE_LINES = 1
 const FOOTER_LINES = 3
 const PINNED_LINES = TITLE_LINES + RULE_LINES
+
+const assertNoCursorArtifacts = (rendered: string[]): void => {
+  for (const line of rendered) {
+    expect(line.includes('\x1b[7m')).toBe(false)
+    expect(line.includes(CURSOR_MARKER)).toBe(false)
+    expect(line.includes(FAKE_CURSOR_START)).toBe(false)
+    expect(line.includes(FAKE_CURSOR_END)).toBe(false)
+  }
+}
 
 describe('QuestionPaneComponent', () => {
   it('pins the tabs and rule while the body scrolls to the focused option', () => {
@@ -137,5 +152,64 @@ describe('QuestionPaneComponent', () => {
         (line) => stripAnsi(line).includes('❯') && line.includes('Option 5'),
       ),
     ).toBe(true)
+  })
+
+  it('strips the reverse-video cursor of an unfocused Other editor', () => {
+    const { pane, state } = makePane()
+    const other = state.curQuestion.question.options.length - 1
+    state.cursor.optionIndex = other
+    state.curQuestion.customEditor.setText('hi')
+
+    state.cursor.optionIndex = 0
+    const rendered = pane.render(120, 12)
+
+    assertNoCursorArtifacts(rendered)
+    // The blank cursor degrades to a plain space right after the text.
+    const editorLine = rendered.find((line) => stripAnsi(line).includes('hi'))
+    expect(stripAnsi(editorLine ?? '')).toMatch(/hi /)
+  })
+
+  it('keeps the character under an unfocused Other editor cursor', () => {
+    const { pane, state } = makePane()
+    const other = state.curQuestion.question.options.length - 1
+    state.cursor.optionIndex = other
+    state.curQuestion.customEditor.setText('hi')
+    state.curQuestion.customEditor.handleInput('\x1b[D')
+
+    state.cursor.optionIndex = 0
+    const rendered = pane.render(120, 12)
+
+    assertNoCursorArtifacts(rendered)
+    expect(rendered.some((line) => stripAnsi(line).includes('hi'))).toBe(true)
+  })
+
+  it('hides the empty unfocused Other editor even when the editor holds focus', () => {
+    const { pane, state } = makePane()
+    const other = state.curQuestion.question.options.length - 1
+    state.cursor.optionIndex = other
+    state.curQuestion.customEditor.focused = true
+    state.cursor.optionIndex = 0
+
+    const rendered = pane.render(120, 12)
+
+    assertNoCursorArtifacts(rendered)
+    const otherRows = rendered.filter((line) =>
+      stripAnsi(line).includes('Other:'),
+    )
+    expect(otherRows).toHaveLength(1)
+    const plain = stripAnsi(otherRows[0] ?? '')
+    expect(plain.replace(/[░▐]$/, '').trimEnd()).toBe('  ○ Other:')
+  })
+
+  it('keeps the cursor marker while editing the Other editor', () => {
+    const { pane, state } = makePane()
+    const other = state.curQuestion.question.options.length - 1
+    state.cursor.optionIndex = other
+    state.curQuestion.customEditor.focused = true
+
+    const rendered = pane.render(120, 12)
+
+    expect(rendered.some((line) => line.includes(CURSOR_MARKER))).toBe(true)
+    expect(rendered.some((line) => line.includes(FAKE_CURSOR_START))).toBe(true)
   })
 })

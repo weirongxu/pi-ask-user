@@ -24,12 +24,16 @@ const wrapPrefixed = (
   return wrapped.map((seg, i) => `${i === 0 ? prefix : cont}${seg}`)
 }
 
-// Unfocused editors still render their cursor as ANSI reverse-video blank;
-// flatten it to a plain space.
-const EDITOR_CURSOR = '\x1b[7m \x1b[0m'
+// Unfocused editors still render a reverse-video cursor and must contribute
+// zero host signaling (pi-tui APC markers).
+// oxlint-disable-next-line no-control-regex
+const EDITOR_CURSOR = /\x1b\[7m([\s\S]*?)\x1b\[[\d;]*m/g
+
+// oxlint-disable-next-line no-control-regex
+const HOST_SIGNALING = /\x1b_pi:[^\x07]*\x07/g
 
 const stripEditorCursor = (line: string): string =>
-  line.replaceAll(EDITOR_CURSOR, ' ')
+  line.replaceAll(EDITOR_CURSOR, '$1').replaceAll(HOST_SIGNALING, '')
 
 // Aligns wrapped description/note lines under the option label.
 const OPTION_BODY_INDENT = '     '

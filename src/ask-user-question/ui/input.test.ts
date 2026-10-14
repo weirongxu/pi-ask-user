@@ -29,6 +29,7 @@ const stubTerminal = (): Terminal => ({
   clearScreen: () => {},
   setTitle: () => {},
   setProgress: () => {},
+  setProgramStatus: () => {},
 })
 
 // State auto-appends an "Other:" option as the last option of each question.
