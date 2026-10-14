@@ -3,6 +3,7 @@ import { defineTool } from '@earendil-works/pi-coding-agent'
 import { Text } from '@earendil-works/pi-tui'
 import { Value } from 'typebox/value'
 
+import { AskCallComponent, AskResultComponent } from './chat-renderer.js'
 import type { Owner } from './owner.js'
 import {
   MAX_OPTIONS,
@@ -76,54 +77,32 @@ export function createAskUserTool(getOwner: () => Owner | undefined) {
       return toToolResult(result)
     },
 
-    renderCall(args: QuestionParamsSchema, theme) {
+    renderCall(args: QuestionParamsSchema, theme, ctx) {
       if (!Value.Check(QuestionParamsSchema, args)) {
         return new Text(theme.fg('warning', '(invalid arguments)'), 0, 0)
       }
-      let text = theme.fg('toolTitle', theme.bold('ask_user_question '))
-      const count = args.questions.length
-      text += theme.fg('muted', `${count} question${count === 1 ? '' : 's'}`)
-      return new Text(text, 0, 0)
+      // Reuse the previous component so the host's expand toggle only rebuilds
+      // when the state actually changed.
+      if (ctx.lastComponent instanceof AskCallComponent) {
+        ctx.lastComponent.setArgs(args)
+        ctx.lastComponent.setExpanded(ctx.expanded)
+        return ctx.lastComponent
+      }
+      return new AskCallComponent({ args, expanded: ctx.expanded, theme })
     },
 
-    renderResult(result, _opts, theme) {
-      const details = result.details
-      switch (details.kind) {
-        case 'cancelled':
-          return new Text(theme.fg('warning', 'Cancelled'), 0, 0)
-        case 'error':
-          return new Text(theme.fg('warning', details.message), 0, 0)
-        case 'ok': {
-          const lines = details.results.flatMap((r) => {
-            const a = r.answer
-            const q = r.question
-            const value = a.selected.map((s) => s.label).join(', ')
-            let prefix = ''
-            if (a.customText !== undefined) {
-              prefix = '(wrote) '
-            } else if (q.multiSelect === true) {
-              prefix = '(multi) '
-            }
-            const mainLine = `${theme.fg('success', '✓ ')}${theme.fg('muted', `${q.question}: `)}${theme.fg('accent', prefix + value)}`
-            const noteLines = a.selected
-              .filter((s) => s.note !== undefined)
-              .map(
-                (s) =>
-                  `  ${theme.fg('muted', `Note for option ${s.index + 1}:`)} ${theme.fg('dim', s.note ?? '')}`,
-              )
-            return [mainLine, ...noteLines]
-          })
-          return new Text(lines.join('\n'), 0, 0)
-        }
-        default: {
-          const lines: string[] = []
-          for (const item of result.content) {
-            if (item.type === 'text') lines.push(item.text)
-          }
-          if (lines.length === 0) lines.push('(no content)')
-          return new Text(theme.fg('warning', lines.join('\n')), 0, 0)
-        }
+    renderResult(result, opts, theme, ctx) {
+      // Reuse the previous component so the host's expand toggle only rebuilds
+      // when the state actually changed.
+      if (ctx.lastComponent instanceof AskResultComponent) {
+        ctx.lastComponent.setExpanded(opts.expanded)
+        return ctx.lastComponent
       }
+      return new AskResultComponent({
+        result,
+        expanded: opts.expanded,
+        theme,
+      })
     },
   })
 }
