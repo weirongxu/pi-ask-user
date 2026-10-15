@@ -69,7 +69,6 @@ const makePane = (): {
     params,
     theme,
     tui: new TuiMainScreen(stubTerminal()),
-    done: () => {},
   })
   return {
     pane: new QuestionPaneComponent({ state, params, theme, subagent: false }),

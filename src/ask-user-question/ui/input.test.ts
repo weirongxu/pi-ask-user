@@ -51,13 +51,13 @@ const makeHandler = (): {
     params,
     theme: themeStub,
     tui: new TuiMainScreen(stubTerminal()),
-    done: () => {},
   })
   return {
     handler: new QuestionnaireInputHandler({
       state,
       params,
       previewPane: new QuestionnairePreviewPane(themeStub),
+      onFinish: () => {},
     }),
     state,
   }

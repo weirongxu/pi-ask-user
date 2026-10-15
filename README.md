@@ -22,6 +22,16 @@ pi install .
 
 Subagent sessions can use `ask_user_question` too. Main and subagent sessions share one extension module instance, and only the real TUI session (`ctx.mode === 'tui' && ctx.hasUI`) registers as the owner; non-TUI sessions (rpc/print) never steal ownership. When a subagent asks, the tool call blocks while the question UI is rendered in the main TUI session, and the answer is returned to the subagent as the tool result (a "cancelled" result if the user cancels). Asks originating from a subagent are labelled with a `subagent` badge in the questionnaire UI.
 
+## Public event contract
+
+The extension emits two events on `pi.events`:
+
+- `pi-ask-user:ask_user_question:ui_start` — the questionnaire UI appeared
+- `pi-ask-user:ask_user_question:ui_end` — the questionnaire UI is gone (also
+  on cancel or session end)
+
+Payload is `{ id: string }` where `id` is the tool-call id. Subscribe with `pi.events.on(EVENT_KEY, listener)`.
+
 ## Development
 
 When started with `PI_DEMO=1`, the extension also registers an `/ask-user-demo` command that walks through the question UI (`/ask-user-demo subagent` previews a subagent ask).

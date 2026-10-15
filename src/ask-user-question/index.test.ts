@@ -1,8 +1,12 @@
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import type {
   ExtensionAPI,
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { registerAskUserQuestion } from './index.js'
 import { setOwner } from './owner.js'
@@ -354,5 +358,139 @@ describe('registerAskUserQuestion', () => {
         expect(() => component.render(80)).not.toThrow()
       }
     })
+  })
+})
+
+describe('ask-user-mode command', () => {
+  type ModeHandler = (args: string, ctx: ExtensionContext) => Promise<void>
+
+  function makeModeCtx(
+    mode: CtxMode,
+    hasUI: boolean,
+  ): { ctx: ExtensionContext; notify: ReturnType<typeof vi.fn> } {
+    const notify = vi.fn()
+    const ctx = {
+      mode,
+      hasUI,
+      ui: { notify },
+      sessionManager: { getSessionId: vi.fn(() => 'mode-session') },
+    } as unknown as ExtensionContext
+    return { ctx, notify }
+  }
+
+  type ModeOptions = {
+    handler: ModeHandler
+    getArgumentCompletions: (
+      prefix: string,
+    ) => { value: string; label: string }[]
+  }
+
+  async function loadCommandOptions(dir: string): Promise<ModeOptions> {
+    vi.stubEnv('PI_CODING_AGENT_DIR', dir)
+    vi.resetModules()
+    const { registerAskUserQuestion } = await import('./index.js')
+    const registerCommand = vi.fn()
+    registerAskUserQuestion(
+      {
+        on: vi.fn(),
+        registerTool: vi.fn(),
+        registerCommand,
+        events: { emit: vi.fn(), on: vi.fn() },
+      } as unknown as ExtensionAPI,
+      { demoEnabled: false },
+    )
+    const call = registerCommand.mock.calls.find(
+      ([name]) => name === 'ask-user-mode',
+    )
+    if (!call) throw new Error('ask-user-mode command was not registered')
+    return call[1] as ModeOptions
+  }
+
+  async function loadCommand(dir: string): Promise<ModeHandler> {
+    return (await loadCommandOptions(dir)).handler
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('toggles the mode and notifies info in a TUI session', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const handler = await loadCommand(dir)
+    const { ctx, notify } = makeModeCtx('tui', true)
+
+    await handler('', ctx)
+
+    expect(notify).toHaveBeenCalledWith('ask-user mode: custom', 'info')
+    const state = JSON.parse(readFileSync(join(dir, 'ask-user.json'), 'utf8'))
+    expect(state.configuration.mode).toBe('custom')
+  })
+
+  it('warns and does not toggle in a non-TUI session', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const handler = await loadCommand(dir)
+    const { ctx, notify } = makeModeCtx('rpc', true)
+
+    await handler('', ctx)
+
+    expect(notify).toHaveBeenCalledWith(
+      'ask-user-mode requires a TUI session',
+      'warning',
+    )
+    expect(existsSync(join(dir, 'ask-user.json'))).toBe(false)
+  })
+
+  it('notifies an error when writing fails and keeps state unchanged', async () => {
+    const base = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const blocked = join(base, 'blocked')
+    writeFileSync(blocked, '', 'utf8')
+    const handler = await loadCommand(blocked)
+    const { ctx, notify } = makeModeCtx('tui', true)
+
+    await handler('', ctx)
+
+    expect(notify).toHaveBeenCalledTimes(1)
+    const [message, style] = notify.mock.calls[0] ?? []
+    expect(String(message)).toContain('failed')
+    expect(style).toBe('error')
+    expect(existsSync(join(blocked, 'ask-user.json'))).toBe(false)
+  })
+
+  it('sets a specific mode from args and normalizes case', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const handler = await loadCommand(dir)
+    const { ctx, notify } = makeModeCtx('tui', true)
+
+    await handler('  OVERLAY  ', ctx)
+
+    expect(notify).toHaveBeenCalledWith('ask-user mode: overlay', 'info')
+    const state = JSON.parse(readFileSync(join(dir, 'ask-user.json'), 'utf8'))
+    expect(state.configuration.mode).toBe('overlay')
+  })
+
+  it('completes mode args with normalization', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const { getArgumentCompletions } = await loadCommandOptions(dir)
+
+    expect(getArgumentCompletions('')).toEqual([
+      { value: 'widget', label: 'widget' },
+      { value: 'custom', label: 'custom' },
+      { value: 'overlay', label: 'overlay' },
+    ])
+    expect(getArgumentCompletions('  O')).toEqual([
+      { value: 'overlay', label: 'overlay' },
+    ])
+  })
+
+  it('ignores an unknown mode arg without toggling', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pi-ask-user-mode-'))
+    const handler = await loadCommand(dir)
+    const { ctx, notify } = makeModeCtx('tui', true)
+
+    await handler('bogus', ctx)
+
+    expect(notify).not.toHaveBeenCalled()
+    expect(existsSync(join(dir, 'ask-user.json'))).toBe(false)
   })
 })

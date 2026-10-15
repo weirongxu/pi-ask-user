@@ -3,6 +3,7 @@ import type {
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent'
 
+import { getConfigurationState } from './config.js'
 import type { QuestionParamsSchema, Result } from './schema.js'
 import { runQuestionnaire } from './ui/index.js'
 
@@ -19,10 +20,6 @@ export type Owner = {
 // module-level owner bridges asks from any session to the real TUI session.
 let owner: Owner | undefined
 
-// NOTE: only a true TUI session (ctx.mode === 'tui' && ctx.hasUI) may register
-// as owner (last-wins); non-TUI sessions with UI context (rpc/print subagent
-// sessions) must not steal ownership and are always routed to the TUI owner at
-// execute time so asks run through ctx.ui.custom.
 export function isTuiOwnerSession(ctx: ExtensionContext): boolean {
   return ctx.mode === 'tui' && ctx.hasUI
 }
@@ -48,6 +45,7 @@ export function createOwner(pi: ExtensionAPI, ctx: ExtensionContext): Owner {
           ctx,
           events: pi.events,
           id,
+          mode: getConfigurationState().configuration.mode,
           params,
           subagent: opts.subagent,
         })

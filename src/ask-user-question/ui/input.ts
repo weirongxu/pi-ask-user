@@ -1,6 +1,6 @@
 import { type Editor, Key, matchesKey } from '@earendil-works/pi-tui'
 
-import type { QuestionParamsSchema } from '../schema.js'
+import type { QuestionParamsSchema, Result } from '../schema.js'
 import type { QuestionnaireState } from '../state.js'
 import type { QuestionnairePreviewPane } from './preview-pane.js'
 
@@ -19,22 +19,38 @@ export class QuestionnaireInputHandler {
   private readonly state: QuestionnaireState
   private readonly params: QuestionParamsSchema
   private readonly previewPane: QuestionnairePreviewPane
+  private readonly onFinish: (r: Result | null) => void
+  private finishedNotified = false
 
   constructor({
     state,
     params,
     previewPane,
+    onFinish,
   }: {
     state: QuestionnaireState
     params: QuestionParamsSchema
     previewPane: QuestionnairePreviewPane
+    onFinish: (r: Result | null) => void
   }) {
     this.state = state
     this.params = params
     this.previewPane = previewPane
+    this.onFinish = onFinish
   }
 
   handleInput = (data: string): void => {
+    this.dispatchInput(data)
+    this.notifyFinished()
+  }
+
+  private notifyFinished(): void {
+    if (this.finishedNotified || !this.state.isFinished) return
+    this.finishedNotified = true
+    this.onFinish(this.state.result)
+  }
+
+  private dispatchInput = (data: string): void => {
     const { state } = this
     const q = state.curQuestion.question
     const option = q.options[state.cursor.optionIndex]

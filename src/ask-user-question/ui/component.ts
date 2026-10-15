@@ -2,7 +2,7 @@ import type { Theme } from '@earendil-works/pi-coding-agent'
 import type { Component } from '@earendil-works/pi-tui'
 
 import { truncateText } from '../../utils/text.js'
-import type { QuestionParamsSchema } from '../schema.js'
+import type { QuestionParamsSchema, Result } from '../schema.js'
 import type { QuestionnaireState } from '../state.js'
 import { QuestionnaireInputHandler } from './input.js'
 import { QuestionnairePreviewPane } from './preview-pane.js'
@@ -22,11 +22,13 @@ export class QuestionnaireComponent implements Component {
     params,
     theme,
     subagent,
+    onFinish,
   }: {
     state: QuestionnaireState
     params: QuestionParamsSchema
     theme: Theme
     subagent: boolean
+    onFinish: (r: Result | null) => void
   }) {
     this.state = state
     this.theme = theme
@@ -41,6 +43,7 @@ export class QuestionnaireComponent implements Component {
       state,
       params,
       previewPane: this.previewPane,
+      onFinish,
     })
   }
 

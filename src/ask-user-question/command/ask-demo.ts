@@ -1,9 +1,10 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 
-import { isTuiOwnerSession } from './owner.js'
-import type { QuestionParamsSchema } from './schema.js'
-import { runQuestionnaire } from './ui/index.js'
+import { getConfigurationState } from '../config.js'
+import { isTuiOwnerSession } from '../owner.js'
+import type { QuestionParamsSchema } from '../schema.js'
+import { runQuestionnaire } from '../ui/index.js'
 
 export const DEMO_PARAMS: QuestionParamsSchema = {
   questions: [
@@ -322,6 +323,7 @@ async function runAskUserDemo(
     events,
     id: 'ask-user-demo',
     params: DEMO_PARAMS,
+    mode: getConfigurationState().configuration.mode,
     subagent,
   })
 

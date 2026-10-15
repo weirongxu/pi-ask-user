@@ -25,6 +25,7 @@ export interface QuestionnaireState {
   questions: QuestionSlot[]
   get curQuestion(): QuestionSlot
   get isFinished(): boolean
+  get result(): Result | null
   get answeredIndices(): Set<number>
   toggleSelect(index: number): void
   enterOptionNote(index: number): void
@@ -102,11 +103,11 @@ export function createQuestionnaireState(args: {
   params: QuestionParamsSchema
   theme: Theme
   tui: TUI
-  done: (r: Result | null) => void
 }): QuestionnaireState {
-  const { params, theme, tui, done } = args
+  const { params, theme, tui } = args
 
   let isFinished = false
+  let result: Result | null = null
   const cursor: Cursor = { questionIndex: 0, optionIndex: 0 }
   const normalizedQuestions = normalizeQuestions(params.questions)
   const editorTheme = createEditorTheme(theme)
@@ -114,7 +115,7 @@ export function createQuestionnaireState(args: {
   const finish = (r: Result | null): void => {
     if (isFinished) return
     isFinished = true
-    done(r)
+    result = r
   }
 
   const state: QuestionnaireState = {
@@ -127,6 +128,10 @@ export function createQuestionnaireState(args: {
     },
     get isFinished() {
       return isFinished
+    },
+    get result() {
+      if (!isFinished) throw new Error('internal: questionnaire not finished')
+      return result
     },
     get answeredIndices() {
       const result = new Set<number>()
