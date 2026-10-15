@@ -236,7 +236,9 @@ export function createQuestionnaireState(args: {
       tui.requestRender()
     },
     getFocusedPreview() {
-      const q = this.curQuestion.question
+      const slot = this.questions[this.cursor.questionIndex]
+      if (!slot) return null
+      const q = slot.question
       const opt = q.options[this.cursor.optionIndex]
       if (!opt || typeof opt.preview !== 'string') return null
       return { preview: opt.preview, label: opt.label }

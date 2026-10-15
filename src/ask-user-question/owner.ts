@@ -2,6 +2,7 @@ import type {
   ExtensionAPI,
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent'
+import { E_CANCELED, Mutex } from 'async-mutex'
 
 import { getConfigurationState } from './config.js'
 import type { QuestionParamsSchema, Result } from './schema.js'
@@ -36,22 +37,39 @@ export function setOwner(o: Owner | undefined): void {
 // (including after /new, /resume and /fork rebinds), so owner registration
 // happens only here.
 export function createOwner(pi: ExtensionAPI, ctx: ExtensionContext): Owner {
+  const mutex = new Mutex()
+  pi.events.on('session_shutdown', () => {
+    mutex.cancel()
+  })
+
+  const runAsk = async (
+    id: string,
+    params: QuestionParamsSchema,
+    opts: { subagent: boolean },
+  ) => {
+    ctx.ui.setWorkingVisible(false)
+    try {
+      return await runQuestionnaire({
+        ctx,
+        events: pi.events,
+        id,
+        mode: getConfigurationState().configuration.mode,
+        params,
+        subagent: opts.subagent,
+      })
+    } finally {
+      ctx.ui.setWorkingVisible(true)
+    }
+  }
+
   return {
     sessionId: ctx.sessionManager.getSessionId(),
-    ask: async (id, params, opts) => {
-      ctx.ui.setWorkingVisible(false)
-      try {
-        return await runQuestionnaire({
-          ctx,
-          events: pi.events,
-          id,
-          mode: getConfigurationState().configuration.mode,
-          params,
-          subagent: opts.subagent,
-        })
-      } finally {
-        ctx.ui.setWorkingVisible(true)
-      }
-    },
+    ask: (id, params, opts) =>
+      mutex
+        .runExclusive(() => runAsk(id, params, opts))
+        .catch((error: unknown) => {
+          if (error === E_CANCELED) return null
+          throw error
+        }),
   }
 }

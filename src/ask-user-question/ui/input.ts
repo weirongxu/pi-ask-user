@@ -40,6 +40,7 @@ export class QuestionnaireInputHandler {
   }
 
   handleInput = (data: string): void => {
+    if (this.state.isFinished) return
     this.dispatchInput(data)
     this.notifyFinished()
   }

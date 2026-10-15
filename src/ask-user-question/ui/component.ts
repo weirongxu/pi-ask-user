@@ -48,6 +48,7 @@ export class QuestionnaireComponent implements Component {
   }
 
   render = (width: number): string[] => {
+    if (this.state.isFinished) return []
     const totalWidth = Math.max(1, width)
     const previewInfo = this.state.getFocusedPreview()
 

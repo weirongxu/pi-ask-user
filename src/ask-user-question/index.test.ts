@@ -78,7 +78,7 @@ function registerExtension() {
     },
     registerTool,
     registerCommand: vi.fn(),
-    events: { emit: vi.fn(), on: vi.fn() },
+    events: { emit: vi.fn(), on: vi.fn(() => () => {}) },
   } as unknown as ExtensionAPI
   registerAskUserQuestion(pi, { demoEnabled: false })
   const registered = registerTool.mock.calls[0]?.[0]
@@ -395,7 +395,7 @@ describe('ask-user-mode command', () => {
         on: vi.fn(),
         registerTool: vi.fn(),
         registerCommand,
-        events: { emit: vi.fn(), on: vi.fn() },
+        events: { emit: vi.fn(), on: vi.fn(() => () => {}) },
       } as unknown as ExtensionAPI,
       { demoEnabled: false },
     )
