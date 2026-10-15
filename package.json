@@ -38,7 +38,7 @@
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "1.0.0",
     "@earendil-works/pi-tui": "1.2.0",
-    "@raidou/oxlint-config-base": "^0.0.3",
+    "@raidou/oxlint-config-base": "^0.1.0",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "26.1.2",
     "oxfmt": "^0.68.0",
