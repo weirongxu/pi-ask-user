@@ -20,12 +20,15 @@ const question = {
 
 const params: QuestionParamsSchema = { questions: [question] }
 
-function makeResult(label: string): Result {
+function makeResult(): Result {
   return {
     results: [
       {
         question,
-        answer: { customText: undefined, selected: [{ index: 0, label }] },
+        answer: {
+          otherCustomText: undefined,
+          selected: [{ checked: true }, { checked: false }],
+        },
       },
     ],
     cancelled: false,
@@ -78,8 +81,8 @@ describe('createOwner ask serialization', () => {
 
   it('runs concurrent asks strictly FIFO with non-interleaved start/end', async () => {
     const { owner, ask, setWorkingVisible: workingVisible } = makeSetup()
-    const first = makeResult('first')
-    const second = makeResult('second')
+    const first = makeResult()
+    const second = makeResult()
     const releaseFirst = Promise.withResolvers<Result | null>()
     ask.mockImplementationOnce(async () => {
       return releaseFirst.promise
@@ -111,7 +114,7 @@ describe('createOwner ask serialization', () => {
 
   it('resolves null for a queued ask when the session shuts down, without rendering it', async () => {
     const { owner, ask, shutdown } = makeSetup()
-    ask.mockImplementation(async () => makeResult('only'))
+    ask.mockImplementation(async () => makeResult())
 
     const p1 = owner.ask('call-1', params, { subagent: false })
     const p2 = owner.ask('call-2', params, { subagent: false })
@@ -119,13 +122,13 @@ describe('createOwner ask serialization', () => {
 
     await expect(p2).resolves.toBeNull()
     expect(ask).toHaveBeenCalledTimes(1)
-    await expect(p1).resolves.toEqual(makeResult('only'))
+    await expect(p1).resolves.toEqual(makeResult())
   })
 
   it('keeps the queue running when a questionnaire rejects', async () => {
     const { owner, ask } = makeSetup()
     ask.mockRejectedValueOnce(new Error('boom'))
-    const second = makeResult('second')
+    const second = makeResult()
     ask.mockImplementationOnce(async () => second)
 
     const p1 = owner.ask('call-1', params, { subagent: false })
@@ -143,7 +146,7 @@ describe('createOwner ask serialization', () => {
       calls += 1
       if (calls === 1) throw new Error('ui boom')
     })
-    const second = makeResult('second')
+    const second = makeResult()
     ask.mockResolvedValue(second)
 
     const p1 = owner.ask('call-1', params, { subagent: false })
@@ -162,7 +165,7 @@ describe('createOwner ask serialization', () => {
       calls += 1
       if (calls === 2) throw new Error('ui boom')
     })
-    const second = makeResult('second')
+    const second = makeResult()
     ask.mockResolvedValue(second)
 
     const p1 = owner.ask('call-1', params, { subagent: false })

@@ -31,16 +31,15 @@ export const QuestionParamsSchema = Type.Object({
 export type QuestionOptionSchema = Static<typeof QuestionOptionSchema>
 export type QuestionSchema = Static<typeof QuestionSchema>
 export type QuestionParamsSchema = Static<typeof QuestionParamsSchema>
-export type Selection = { index: number; label: string; note?: string }
+export type Selection = { checked: boolean; note?: string }
 
 export interface Answer {
-  customText: string | undefined
+  otherCustomText: string | undefined
   selected: Selection[]
 }
 
 export interface Draft {
   check: boolean
-  label: string
   isOther: boolean
   note?: string
 }
@@ -103,12 +102,11 @@ function normalizeParams(params: QuestionParamsSchema): QuestionParamsSchema {
 
 export function buildAnswer(
   draft: Draft[],
-  customText: string | undefined,
+  otherCustomText: string | undefined,
 ): Answer {
-  const selected: Selection[] = []
-  for (const [i, d] of draft.entries()) {
-    if (!d.check) continue
-    selected.push({ index: i, label: d.label, note: d.note })
-  }
-  return { customText, selected }
+  const selected = draft.map((d) => ({
+    checked: d.check,
+    note: d.isOther ? undefined : d.note,
+  }))
+  return { otherCustomText, selected }
 }

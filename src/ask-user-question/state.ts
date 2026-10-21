@@ -14,7 +14,7 @@ export type Cursor = { questionIndex: number; optionIndex: number }
 export type QuestionSlot = {
   question: QuestionSchema
   draft: Draft[]
-  customText: string | undefined
+  otherCustomText: string | undefined
   customEditor: Editor
   noteEditors: Editor[]
   editingNoteIndex: number | null
@@ -32,7 +32,7 @@ export interface QuestionnaireState {
   exitOptionNote(): void
   updateOptionNote(index: number, text: string): void
   commitOption(): void
-  commitCustom(value: string): void
+  commitOtherCustom(value: string): void
   advance(): void
   requestRender(): void
   getFocusedPreview(): { preview: string; label: string } | null
@@ -66,7 +66,6 @@ function createEditorTheme(theme: Theme): EditorTheme {
 function createDraft(options: QuestionSchema['options']): Draft[] {
   return options.map((o) => ({
     check: false,
-    label: o.label,
     isOther: o.isOther === true,
   }))
 }
@@ -91,7 +90,7 @@ function buildSlots(
     return {
       question,
       draft,
-      customText: undefined,
+      otherCustomText: undefined,
       customEditor,
       noteEditors,
       editingNoteIndex: null,
@@ -136,7 +135,10 @@ export function createQuestionnaireState(args: {
     get answeredIndices() {
       const result = new Set<number>()
       this.questions.forEach((slot, i) => {
-        if (slot.draft.some((d) => d.check) || slot.customText !== undefined) {
+        if (
+          slot.draft.some((d) => d.check) ||
+          slot.otherCustomText !== undefined
+        ) {
           result.add(i)
         }
       })
@@ -189,16 +191,16 @@ export function createQuestionnaireState(args: {
         const otherDraft = slot.draft.find((d) => d.isOther)
         if (otherDraft) otherDraft.check = false
       }
-      slot.customText = undefined
+      slot.otherCustomText = undefined
       this.advance()
     },
-    commitCustom(value: string) {
+    commitOtherCustom(value: string) {
       const trimmed = value.trim()
       if (!trimmed) return
       const slot = this.curQuestion
       const q = slot.question
       const otherIndex = slot.draft.findIndex((d) => d.isOther)
-      slot.customText = trimmed
+      slot.otherCustomText = trimmed
       if (!q.multiSelect) {
         slot.draft.forEach((d, i) => {
           d.check = i === otherIndex
@@ -226,7 +228,7 @@ export function createQuestionnaireState(args: {
         finish({
           results: this.questions.map((s) => ({
             question: s.question,
-            answer: buildAnswer(s.draft, s.customText),
+            answer: buildAnswer(s.draft, s.otherCustomText),
           })),
           cancelled: false,
         })
@@ -271,7 +273,7 @@ export function createQuestionnaireState(args: {
     tui,
     editorTheme,
     (value) => {
-      state.commitCustom(value)
+      state.commitOtherCustom(value)
     },
     (index, value) => {
       state.updateOptionNote(index, value)

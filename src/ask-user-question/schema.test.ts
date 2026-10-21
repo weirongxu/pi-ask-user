@@ -54,23 +54,20 @@ describe('parseParams', () => {
 })
 
 describe('buildAnswer', () => {
-  it('keeps Other label and stores user text in customText', () => {
+  it('stores user text in otherCustomText and marks Other checked', () => {
     const answer = buildAnswer(
       [
-        { check: false, label: 'a', isOther: false },
-        { check: true, label: 'Other:', isOther: true, note: 'hi' },
+        { check: false, isOther: false },
+        { check: true, isOther: true, note: 'hi' },
       ],
       'my own words',
     )
-    expect(answer.customText).toBe('my own words')
-    expect(answer.selected).toEqual([{ index: 1, label: 'Other:', note: 'hi' }])
+    expect(answer.otherCustomText).toBe('my own words')
+    expect(answer.selected).toEqual([{ checked: false }, { checked: true }])
   })
 
-  it('keeps Other label when customText is undefined', () => {
-    const answer = buildAnswer(
-      [{ check: true, label: 'Other:', isOther: true }],
-      undefined,
-    )
-    expect(answer.selected).toEqual([{ index: 0, label: 'Other:' }])
+  it('keeps Other label when otherCustomText is undefined', () => {
+    const answer = buildAnswer([{ check: true, isOther: true }], undefined)
+    expect(answer.selected).toEqual([{ checked: true }])
   })
 })

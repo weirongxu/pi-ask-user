@@ -30,15 +30,15 @@ const answer: Result = {
     {
       question: question1,
       answer: {
-        customText: undefined,
-        selected: [{ index: 0, label: 'alpha', note: 'my note' }],
+        otherCustomText: undefined,
+        selected: [{ checked: true, note: 'my note' }, { checked: false }],
       },
     },
     {
       question: question2,
       answer: {
-        customText: 'freeform',
-        selected: [{ index: 1, label: 'two' }],
+        otherCustomText: 'freeform',
+        selected: [{ checked: false }, { checked: true }],
       },
     },
   ],
@@ -155,7 +155,7 @@ describe('AskResultComponent', () => {
     const out = render(comp)
     expect(out).toContain('✓ alpha')
     expect(out).toContain('· beta')
-    expect(out).toContain('— my note')
+    expect(out).toContain('📝 my note')
     expect(out).toContain('✎ freeform')
     expect(out).toContain('(wrote)')
   })
@@ -169,8 +169,8 @@ describe('AskResultComponent', () => {
           {
             question: question1,
             answer: {
-              customText: 'alpha',
-              selected: [{ index: 0, label: 'alpha' }],
+              otherCustomText: 'alpha',
+              selected: [{ checked: true }, { checked: false }],
             },
           },
         ],
@@ -184,39 +184,6 @@ describe('AskResultComponent', () => {
     const out = render(comp)
     expect(out).toContain('✓ alpha')
     expect(out).toContain('✎ alpha')
-  })
-
-  it('renders legacy details with user text as selected label once each', () => {
-    const legacyQuestion = {
-      question: 'Pick one',
-      header: 'Tab',
-      options: [{ label: 'alpha' }, { label: 'Other:', isOther: true }],
-    }
-    const legacyResult: AgentToolResult<AskDetails> = JSON.parse(
-      JSON.stringify({
-        content: [{ type: 'text', text: '' }],
-        details: {
-          kind: 'ok',
-          results: [
-            {
-              question: legacyQuestion,
-              answer: {
-                customText: 'my own words',
-                selected: [{ index: 1, label: 'my own words' }],
-              },
-            },
-          ],
-        },
-      }),
-    )
-    const comp = new AskResultComponent({
-      result: legacyResult,
-      expanded: true,
-      theme,
-    })
-    const out = render(comp)
-    expect(out.match(/✓ Other:/g)).toHaveLength(1)
-    expect(out.match(/✎ my own words/g)).toHaveLength(1)
   })
 
   it('renders cancelled results as a single warning line', () => {

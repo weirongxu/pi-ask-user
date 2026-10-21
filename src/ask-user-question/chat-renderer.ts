@@ -44,17 +44,6 @@ export function renderCallExpanded(
   return lines
 }
 
-/** Marker shown after the question text in expanded result lines. */
-function resultMarker(result: QuestionResult, theme: Theme): string {
-  if (result.answer.customText !== undefined) {
-    return theme.fg('muted', ' (wrote)')
-  }
-  if (result.question.multiSelect === true) {
-    return theme.fg('muted', ' (multi)')
-  }
-  return ''
-}
-
 /** Collapsed result line for a successful run: first question + `(+N)`. */
 function renderResultOkCollapsed(
   results: QuestionResult[],
@@ -63,11 +52,19 @@ function renderResultOkCollapsed(
   const head = results[0]
   if (!head) return [theme.fg('warning', '(no results)')]
   const a = head.answer
-  const value = a.customText ?? a.selected.map((s) => s.label).join(', ')
+  const value =
+    a.otherCustomText ??
+    a.selected
+      .flatMap((s, i) =>
+        s.checked && head.question.options[i]
+          ? [head.question.options[i].label]
+          : [],
+      )
+      .join(', ')
   const extra =
     results.length > 1 ? theme.fg('muted', ` (+${results.length - 1})`) : ''
   let prefix = ''
-  if (a.customText !== undefined) {
+  if (a.otherCustomText !== undefined) {
     prefix = '(wrote) '
   } else if (head.question.multiSelect === true) {
     prefix = '(multi) '
@@ -86,35 +83,32 @@ function renderResultOkExpanded(
   for (const r of results) {
     const q = r.question
     const a = r.answer
+    let marker = ''
+    if (a.otherCustomText !== undefined) {
+      marker = theme.fg('muted', ' (wrote)')
+    } else if (q.multiSelect === true) {
+      marker = theme.fg('muted', ' (multi)')
+    }
     lines.push(
-      `${theme.fg('success', '✓ ')}${flattenToSingleLine(q.question)}${resultMarker(r, theme)}`,
+      `${theme.fg('success', '✓ ')}${flattenToSingleLine(q.question)}${marker}`,
     )
-    const selectedIndexes = new Set(a.selected.map((s) => s.index))
     for (const [i, option] of q.options.entries()) {
-      if (selectedIndexes.has(i)) {
+      const sel = a.selected[i]
+      if (sel?.checked) {
         lines.push(
           `  ${theme.fg('success', '✓')} ${theme.fg('accent', option.label)}`,
         )
       } else {
         lines.push(`  ${theme.fg('dim', '·')} ${theme.fg('dim', option.label)}`)
       }
-      const note = a.selected.find((s) => s.index === i)?.note
-      if (note !== undefined) {
-        lines.push(`    ${theme.fg('dim', `— ${flattenToSingleLine(note)}`)}`)
+      if (sel?.note !== undefined) {
+        lines.push(
+          `    ${theme.fg('dim', `📝 ${flattenToSingleLine(sel.note)}`)}`,
+        )
       }
     }
-    // Selections pointing past the options range (defensive) still show
-    // their label and note so nothing is silently dropped.
-    for (const s of a.selected) {
-      if (s.index >= 0 && s.index < q.options.length) continue
-      let line = `  ${theme.fg('success', '✓')} ${theme.fg('accent', s.label)}`
-      if (s.note !== undefined) {
-        line += ` ${theme.fg('dim', `— ${flattenToSingleLine(s.note)}`)}`
-      }
-      lines.push(line)
-    }
-    if (a.customText !== undefined) {
-      lines.push(`  ${theme.fg('accent', `✎ ${a.customText}`)}`)
+    if (a.otherCustomText !== undefined) {
+      lines.push(`  ${theme.fg('accent', `✎ ${a.otherCustomText}`)}`)
     }
   }
   return lines

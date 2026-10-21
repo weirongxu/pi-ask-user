@@ -182,7 +182,7 @@ export class QuestionnaireInputHandler {
     if (matchesKey(data, Key.enter)) {
       const text = editor.getText()
       if (text.trim().length > 0) {
-        state.commitCustom(text)
+        state.commitOtherCustom(text)
       } else if (q.multiSelect === true) {
         state.commitOption()
       }

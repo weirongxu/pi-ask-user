@@ -33,7 +33,10 @@ const answer: Result = {
   results: [
     {
       question,
-      answer: { customText: undefined, selected: [{ index: 0, label: 'a' }] },
+      answer: {
+        otherCustomText: undefined,
+        selected: [{ checked: true }, { checked: false }],
+      },
     },
   ],
   cancelled: false,
@@ -422,9 +425,9 @@ describe('ask-user-mode command', () => {
 
     await handler('', ctx)
 
-    expect(notify).toHaveBeenCalledWith('ask-user mode: custom', 'info')
+    expect(notify).toHaveBeenCalledWith('ask-user mode: overlay', 'info')
     const state = JSON.parse(readFileSync(join(dir, 'ask-user.json'), 'utf8'))
-    expect(state.configuration.mode).toBe('custom')
+    expect(state.configuration.mode).toBe('overlay')
   })
 
   it('warns and does not toggle in a non-TUI session', async () => {

@@ -77,7 +77,7 @@ describe('QuestionnaireInputHandler', () => {
     handler.handleInput('b')
 
     expect(state.curQuestion.customEditor.getText()).toBe('a\nb')
-    expect(state.curQuestion.customText).toBeUndefined()
+    expect(state.curQuestion.otherCustomText).toBeUndefined()
   })
 
   it('inserts a newline in the Other editor for a kitty shift+enter', () => {
@@ -89,7 +89,7 @@ describe('QuestionnaireInputHandler', () => {
     handler.handleInput('b')
 
     expect(state.curQuestion.customEditor.getText()).toBe('a\nb')
-    expect(state.curQuestion.customText).toBeUndefined()
+    expect(state.curQuestion.otherCustomText).toBeUndefined()
   })
 
   it('still commits the Other editor on plain enter', () => {
@@ -102,7 +102,7 @@ describe('QuestionnaireInputHandler', () => {
     const slot = state.curQuestion
     handler.handleInput('\r')
 
-    expect(slot.customText).toBe('a\nb')
+    expect(slot.otherCustomText).toBe('a\nb')
   })
 
   it('moves to the next option on Down at the last line of the Other editor', () => {

@@ -39,10 +39,10 @@ async function writeRaw(content: string): Promise<string> {
 }
 
 describe('module-load read', () => {
-  it('uses default widget when the file is missing', async () => {
+  it('uses default custom when the file is missing', async () => {
     const config = await loadConfig()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: true,
     })
   })
@@ -89,7 +89,7 @@ describe('invalid fallback', () => {
     const path = await writeRaw(broken)
     const config = await loadConfig()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: false,
     })
     expect(await readFile(path, 'utf8')).toBe(broken)
@@ -104,7 +104,7 @@ describe('invalid fallback', () => {
     const path = await writeRaw(broken)
     const config = await loadConfig()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: false,
     })
     expect(await readFile(path, 'utf8')).toBe(broken)
@@ -116,7 +116,7 @@ describe('invalid fallback', () => {
     await writeRaw(legacy)
     const config = await loadConfig()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: false,
     })
     if (!agentDir) throw new Error('config module not loaded')
@@ -125,23 +125,14 @@ describe('invalid fallback', () => {
 })
 
 describe('toggleRenderMode persistence', () => {
-  it('cycles widget -> custom -> overlay -> widget, persisting each step', async () => {
+  it('cycles custom -> overlay -> widget -> custom, persisting each step', async () => {
     await loadConfig()
     await writeRaw('{oops')
     const config = await loadConfig()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: false,
     })
-    expect(config.toggleRenderMode()).toBe('custom')
-    expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'custom' },
-      valid: true,
-    })
-    if (!agentDir) throw new Error('config module not loaded')
-    expect(
-      JSON.parse(await readFile(join(agentDir, 'ask-user.json'), 'utf8')),
-    ).toEqual({ configuration: { mode: 'custom' }, valid: true })
     expect(config.toggleRenderMode()).toBe('overlay')
     if (!agentDir) throw new Error('config module not loaded')
     expect(
@@ -152,12 +143,17 @@ describe('toggleRenderMode persistence', () => {
     expect(
       JSON.parse(await readFile(join(agentDir, 'ask-user.json'), 'utf8')),
     ).toEqual({ configuration: { mode: 'widget' }, valid: true })
+    expect(config.toggleRenderMode()).toBe('custom')
+    if (!agentDir) throw new Error('config module not loaded')
+    expect(
+      JSON.parse(await readFile(join(agentDir, 'ask-user.json'), 'utf8')),
+    ).toEqual({ configuration: { mode: 'custom' }, valid: true })
     const reloaded = await loadConfig()
     expect(reloaded.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: true,
     })
-    expect(reloaded.toggleRenderMode()).toBe('custom')
+    expect(reloaded.toggleRenderMode()).toBe('overlay')
   })
 
   it('creates the agent dir recursively when missing', async () => {
@@ -165,10 +161,10 @@ describe('toggleRenderMode persistence', () => {
     if (!agentDir) throw new Error('config module not loaded')
     const nested = join(agentDir, 'nested', 'agent')
     const config = await loadConfig(nested)
-    expect(config.toggleRenderMode()).toBe('custom')
+    expect(config.toggleRenderMode()).toBe('overlay')
     expect(
       JSON.parse(await readFile(join(nested, 'ask-user.json'), 'utf8')),
-    ).toEqual({ configuration: { mode: 'custom' }, valid: true })
+    ).toEqual({ configuration: { mode: 'overlay' }, valid: true })
   })
 
   it('honors a stored valid: false flag', async () => {
@@ -189,12 +185,12 @@ describe('toggleRenderMode persistence', () => {
     writeFileSync(blocked, '', 'utf8')
     const config = await loadConfig(blocked)
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: true,
     })
     expect(() => config.toggleRenderMode()).toThrow()
     expect(config.getConfigurationState()).toEqual({
-      configuration: { mode: 'widget' },
+      configuration: { mode: 'custom' },
       valid: true,
     })
   })
