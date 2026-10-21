@@ -30,7 +30,7 @@ type ConfigurationState = {
 }
 
 const defaultConfiguration: AskUserConfiguration = Object.freeze({
-  mode: 'widget',
+  mode: 'custom',
 })
 
 const configPath = join(getAgentDir(), 'ask-user.json')

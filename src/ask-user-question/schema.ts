@@ -108,8 +108,7 @@ export function buildAnswer(
   const selected: Selection[] = []
   for (const [i, d] of draft.entries()) {
     if (!d.check) continue
-    const label = d.isOther && customText !== undefined ? customText : d.label
-    selected.push({ index: i, label, note: d.note })
+    selected.push({ index: i, label: d.label, note: d.note })
   }
   return { customText, selected }
 }

@@ -185,8 +185,11 @@ export function createQuestionnaireState(args: {
         slot.draft.forEach((d, i) => {
           d.check = i === cursor.optionIndex
         })
+      } else {
+        const otherDraft = slot.draft.find((d) => d.isOther)
+        if (otherDraft) otherDraft.check = false
       }
-      this.curQuestion.customText = undefined
+      slot.customText = undefined
       this.advance()
     },
     commitCustom(value: string) {

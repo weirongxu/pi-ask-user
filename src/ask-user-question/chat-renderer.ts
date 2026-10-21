@@ -113,11 +113,7 @@ function renderResultOkExpanded(
       }
       lines.push(line)
     }
-    // Custom free-form answer: show it unless it duplicates a selected label.
-    if (
-      a.customText !== undefined &&
-      !a.selected.some((s) => s.label === a.customText)
-    ) {
+    if (a.customText !== undefined) {
       lines.push(`  ${theme.fg('accent', `✎ ${a.customText}`)}`)
     }
   }

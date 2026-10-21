@@ -54,7 +54,7 @@ describe('parseParams', () => {
 })
 
 describe('buildAnswer', () => {
-  it('uses customText as label when the Other option is selected', () => {
+  it('keeps Other label and stores user text in customText', () => {
     const answer = buildAnswer(
       [
         { check: false, label: 'a', isOther: false },
@@ -63,9 +63,7 @@ describe('buildAnswer', () => {
       'my own words',
     )
     expect(answer.customText).toBe('my own words')
-    expect(answer.selected).toEqual([
-      { index: 1, label: 'my own words', note: 'hi' },
-    ])
+    expect(answer.selected).toEqual([{ index: 1, label: 'Other:', note: 'hi' }])
   })
 
   it('keeps Other label when customText is undefined', () => {

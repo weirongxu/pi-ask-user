@@ -160,7 +160,7 @@ describe('AskResultComponent', () => {
     expect(out).toContain('(wrote)')
   })
 
-  it('does not duplicate custom text equal to a selected label', () => {
+  it('always renders custom text line', () => {
     const withOtherLabel: AgentToolResult<AskDetails> = {
       content: okResult.content,
       details: {
@@ -182,8 +182,41 @@ describe('AskResultComponent', () => {
       theme,
     })
     const out = render(comp)
-    expect(out).not.toContain('✎')
-    expect(out.match(/alpha/g)).toHaveLength(1)
+    expect(out).toContain('✓ alpha')
+    expect(out).toContain('✎ alpha')
+  })
+
+  it('renders legacy details with user text as selected label once each', () => {
+    const legacyQuestion = {
+      question: 'Pick one',
+      header: 'Tab',
+      options: [{ label: 'alpha' }, { label: 'Other:', isOther: true }],
+    }
+    const legacyResult: AgentToolResult<AskDetails> = JSON.parse(
+      JSON.stringify({
+        content: [{ type: 'text', text: '' }],
+        details: {
+          kind: 'ok',
+          results: [
+            {
+              question: legacyQuestion,
+              answer: {
+                customText: 'my own words',
+                selected: [{ index: 1, label: 'my own words' }],
+              },
+            },
+          ],
+        },
+      }),
+    )
+    const comp = new AskResultComponent({
+      result: legacyResult,
+      expanded: true,
+      theme,
+    })
+    const out = render(comp)
+    expect(out.match(/✓ Other:/g)).toHaveLength(1)
+    expect(out.match(/✎ my own words/g)).toHaveLength(1)
   })
 
   it('renders cancelled results as a single warning line', () => {
